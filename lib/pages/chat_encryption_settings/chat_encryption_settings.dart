@@ -3,8 +3,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat_encryption_settings/chat_encryption_settings_view.dart';
+import 'package:fluffychat/security/room_crypto_policy.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
 import 'package:fluffychat/widgets/matrix.dart';
@@ -83,7 +85,14 @@ class ChatEncryptionSettingsController extends State<ChatEncryptionSettings> {
     if (!mounted) return;
     await showFutureLoadingDialog(
       context: context,
-      future: () => room.enableEncryption(),
+      future: () => room.client.setRoomStateWithKey(
+        room.id,
+        EventTypes.Encryption,
+        '',
+        RoomCryptoPolicy.encryptionContent(
+          strict: AppSettings.requireVerifiedIdentities.value,
+        ),
+      ),
     );
   }
 

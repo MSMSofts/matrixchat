@@ -69,3 +69,8 @@ Preserve compatibility with Matrix and upstream license notices. Do not introduc
 
 - Strict identity mode restricts RTC focus selection to the local homeserver's advertised/configured RTC services. This reduces exposure to member-advertised endpoints; it does not protect against a malicious homeserver or an untrusted configured fallback.
 - CI retains its existing checks while accepting the project's security commit type. The dedicated workflow now reports formatting diffs and cancels superseded checks on the same ref; an unformatted candidate still fails the formatting gate.
+
+## R5 — identity continuity and room encryption policy
+- Strict interactive send checks require verified master keys, valid verified non-blocked devices, and a per-account local identity pin. A changed pin requires explicit consent and fresh interactive verification; no message is sent in the same attempt. Storage errors fail closed. This is local continuity, not key transparency or proof against a compromised device. Other SDK send flows and queued events may not traverse this UI check.
+- Newly created private groups and explicitly enabled encryption use standard Matrix rotation_period_ms and rotation_period_msgs state (24h/100 messages or strict 1h/20). Strict direct chat creation through the user dialog also sets the policy; existing rooms and other creation paths are not rewritten. SDK rotation and membership change behavior remains authoritative; remote room state changes may alter limits.
+- Global key sharing setting is applied to active clients, not just the selected account. Real multi-device interoperability remains a release gate.

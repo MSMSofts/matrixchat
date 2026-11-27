@@ -6,9 +6,11 @@
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/key_verification/key_verification_dialog.dart';
+import 'package:fluffychat/security/identity_pin.dart';
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/adaptive_dialog_action.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/dialog_text_field.dart';
+import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/avatar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
@@ -26,14 +28,65 @@ Future<bool> showTrustUserInRoomDialog(BuildContext context, Room room) async {
   final users = await room.requestParticipants();
   if (!context.mounted) return false;
   if (AppSettings.requireVerifiedIdentities.value) {
-    final allVerified = users.every(
-      (user) =>
-          user.id == room.client.userID ||
-          room.client.userDeviceKeys[user.id]?.masterKey?.verified == true,
+    final activeUsers = users.where(
+      (user) => user.membership == Membership.join ||
+          user.membership == Membership.invite,
     );
-    if (!allVerified || users.isEmpty) {
-      _securityBlocked(context, identity: true);
-      return false;
+    if (activeUsers.isEmpty) return false;
+    for (final user in activeUsers) {
+      if (user.id == room.client.userID) continue;
+      final keys = room.client.userDeviceKeys[user.id];
+      final master = keys?.masterKey;
+      final publicKey = master?.publicKey;
+      if (master?.verified != true || publicKey == null || keys == null) {
+        _securityBlocked(context, identity: true);
+        return false;
+      }
+      final devices = keys.deviceKeys.values.where((key) => !key.blocked);
+      if (devices.isEmpty ||
+          devices.any((key) => !key.isValid || !key.verified)) {
+        _securityBlocked(context, identity: true);
+        return false;
+      }
+      final account = '${room.client.clientName}:${room.client.userID}';
+      final result = await IdentityPin.instance.check(
+        account: account,
+        userId: user.id,
+        publicKey: publicKey,
+        verified: true,
+      );
+      if (!context.mounted) return false;
+      if (result == IdentityPinResult.changed) {
+        final persian = Localizations.localeOf(context).languageCode == 'fa';
+        final consent = await showOkCancelAlertDialog(
+          context: context,
+          title: persian ? 'تغییر کلید هویت' : 'Identity key changed',
+          message: persian
+              ? 'کلید ثبت‌شده مخاطب تغییر کرده است. فقط پس از تطبیق هویت از مسیر مستقل، دوباره تأیید کنید.'
+              : 'The saved identity key changed. Verify the contact again through an independent channel before accepting it.',
+        );
+        if (!context.mounted || consent != OkCancelResult.ok) return false;
+        final request = await keys.startVerification();
+        if (!context.mounted) return false;
+        final success = await KeyVerificationDialog(request: request).show(context);
+        if (!context.mounted || success != true) return false;
+        final updated = room.client.userDeviceKeys[user.id]?.masterKey;
+        if (updated?.publicKey != publicKey || updated?.verified != true) {
+          return false;
+        }
+        // Never send in the same attempt as a trust change.
+        await IdentityPin.instance.replaceAfterVerification(
+          account: account,
+          userId: user.id,
+          publicKey: publicKey,
+          verified: true,
+        );
+        return false;
+      }
+      if (result == IdentityPinResult.unavailable) {
+        _securityBlocked(context, identity: true);
+        return false;
+      }
     }
     return true;
   }

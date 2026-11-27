@@ -6,8 +6,10 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/new_group/new_group_view.dart';
+import 'package:fluffychat/security/room_crypto_policy.dart';
 import 'package:fluffychat/utils/file_selector.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call_member.dart';
 import 'package:fluffychat/widgets/matrix.dart';
@@ -88,6 +90,13 @@ class NewGroupController extends State<NewGroup> {
               'events': {MatrixRtcCallMember.eventType: 0},
             },
       initialState: [
+        if (!publicGroup && client.encryptionEnabled)
+          sdk.StateEvent(
+            type: sdk.EventTypes.Encryption,
+            content: RoomCryptoPolicy.encryptionContent(
+              strict: AppSettings.requireVerifiedIdentities.value,
+            ),
+          ),
         if (avatar != null)
           sdk.StateEvent(
             type: sdk.EventTypes.RoomAvatar,
