@@ -47,24 +47,19 @@ abstract class ClientManager {
     if (initialize) {
       await Future.wait(
         clients.map(
-          (client) => client
-              .initWithRestore(
-                onMigration: () async {
-                  final l10n = await lookupL10n(
-                    PlatformDispatcher.instance.locale,
-                  );
-                  sendInitNotification(
-                    l10n.databaseMigrationTitle,
-                    l10n.databaseMigrationBody,
-                  );
-                },
-              ),
+          (client) => client.initWithRestore(
+            onMigration: () async {
+              final l10n = await lookupL10n(PlatformDispatcher.instance.locale);
+              sendInitNotification(
+                l10n.databaseMigrationTitle,
+                l10n.databaseMigrationBody,
+              );
+            },
+          ),
         ),
       );
     }
-    if (initialize &&
-        clients.length > 1 &&
-        clients.any((c) => !c.isLogged())) {
+    if (initialize && clients.length > 1 && clients.any((c) => !c.isLogged())) {
       final loggedOutClients = clients.where((c) => !c.isLogged()).toList();
       for (final client in loggedOutClients) {
         Logs().w(

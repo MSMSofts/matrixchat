@@ -19,8 +19,7 @@ class MediaVault {
   MediaVault(this.database, {required this.cacheEnabled});
 
   static bool isPending(Uri uri) =>
-      uri.scheme == 'cache' &&
-      (uri.host == 'file' || uri.host == 'thumbnail');
+      uri.scheme == 'cache' && (uri.host == 'file' || uri.host == 'thumbnail');
 
   Future<void> initialize() async {
     await database.execute(
@@ -43,16 +42,12 @@ class MediaVault {
       return;
     }
     await database.transaction((txn) async {
-      await txn.insert(
-        table,
-        {
-          'uri': uri.toString(),
-          'content': bytes,
-          'saved_at': time > 0 ? time : DateTime.now().millisecondsSinceEpoch,
-          'pending': pending ? 1 : 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await txn.insert(table, {
+        'uri': uri.toString(),
+        'content': bytes,
+        'saved_at': time > 0 ? time : DateTime.now().millisecondsSinceEpoch,
+        'pending': pending ? 1 : 0,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
       // Ordinary cache has a total budget; pending uploads are excluded.
       if (pending) return;
       final rows = await txn.rawQuery(
@@ -112,11 +107,9 @@ class VaultMatrixDatabase extends MatrixSdkDatabase {
       Future<String?> Function(String) read,
       Future<void> Function(String, String) write,
       Future<void> Function(String) delete,
-    }) secureStorage,
-  }) : super.buildWithoutOpen(
-         database: database,
-         secureStorage: secureStorage,
-       );
+    })
+    secureStorage,
+  }) : super.buildWithoutOpen(database: database, secureStorage: secureStorage);
 
   @override
   bool get supportsFileStoring => true;

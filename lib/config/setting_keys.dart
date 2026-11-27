@@ -44,7 +44,10 @@ enum AppSettings<T> {
   sendPublicReadReceipts<bool>('chat.fluffy.send_public_read_receipts', false),
   privateNotifications<bool>('matrixchat.private_notifications', true),
   requireEncryptedRooms<bool>('matrixchat.require_encrypted_rooms', false),
-  requireVerifiedIdentities<bool>('matrixchat.require_verified_identities', false),
+  requireVerifiedIdentities<bool>(
+    'matrixchat.require_verified_identities',
+    false,
+  ),
   persistPlaintextDrafts<bool>('matrixchat.persist_plaintext_drafts', false),
   persistMediaCache<bool>('matrixchat.persist_media_cache', false),
   swipeRightToLeftToReply<bool>('chat.fluffy.swipeRightToLeftToReply', true),

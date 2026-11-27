@@ -8,9 +8,7 @@ import 'package:fluffychat/security/security_policy.dart';
 
 abstract final class RtcSecurity {
   static bool permitsFocus(Uri uri) =>
-      SecurityPolicy.permitsUri(uri) &&
-      !uri.hasQuery &&
-      !uri.hasFragment;
+      SecurityPolicy.permitsUri(uri) && !uri.hasQuery && !uri.hasFragment;
 
   static bool permitsMediaEndpoint(Uri uri) =>
       (uri.scheme == 'wss' || uri.scheme == 'https') &&

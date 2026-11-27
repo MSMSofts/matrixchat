@@ -10,7 +10,8 @@ class SecurityStorageException implements Exception {
   const SecurityStorageException();
 
   @override
-  String toString() => 'Secure storage unavailable. Existing data was preserved.';
+  String toString() =>
+      'Secure storage unavailable. Existing data was preserved.';
 }
 
 abstract final class SecurityPolicy {

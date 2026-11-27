@@ -83,8 +83,8 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
       }
 
       final deviceId = callKeys.member.claimedDeviceId;
-      final device = room.client.userDeviceKeys[event.sender]
-          ?.deviceKeys[deviceId];
+      final device =
+          room.client.userDeviceKeys[event.sender]?.deviceKeys[deviceId];
       if (device == null ||
           !device.isValid ||
           device.blocked ||

@@ -38,7 +38,9 @@ Future<CallKitParams> buildFluffyChatCallKitParams(
       'intent': intent.name,
     },
     appName: AppSettings.applicationName.value,
-    nameCaller: private ? AppSettings.applicationName.value : room.getLocalizedDisplayname(),
+    nameCaller: private
+        ? AppSettings.applicationName.value
+        : room.getLocalizedDisplayname(),
     avatar: avatarUrl?.toString(),
     handle: switch (intent) {
       MatrixRtcCallIntent.voice => l10n.voiceCall,

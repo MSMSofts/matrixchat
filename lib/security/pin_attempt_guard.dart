@@ -31,47 +31,45 @@ class PinAttemptGuard {
     }
   }
 
-  Future<bool> verify(bool Function() checkPin) =>
-      _lock.synchronized(() async {
-        retryAfterSeconds = 5;
-        try {
-          final stored = await read();
-          var failures = 0;
-          var blockedUntil = 0;
-          if (stored != null) {
-            final decoded = jsonDecode(stored);
-            if (decoded is! Map<String, dynamic>) return false;
-            final count = decoded['failures'];
-            final until = decoded['blockedUntil'];
-            if (count is! int ||
-                count < 0 ||
-                count > 7 ||
-                until is! int ||
-                until < 0) {
-              return false;
-            }
-            failures = count;
-            blockedUntil = until;
-          }
-          final time = now().millisecondsSinceEpoch;
-          if (blockedUntil > time) {
-            retryAfterSeconds = ((blockedUntil - time + 999) ~/ 1000)
-                .clamp(1, 300);
-            return false;
-          }
-
-          // Persist an attempt before comparing the PIN.
-          final nextFailures = (failures + 1).clamp(1, 7);
-          retryAfterSeconds = (5 * (1 << (nextFailures - 1))).clamp(5, 300);
-          await _persist(nextFailures, time + retryAfterSeconds * 1000);
-          if (!checkPin()) return false;
-          await _persist(0, 0);
-          retryAfterSeconds = 0;
-          return true;
-        } catch (_) {
+  Future<bool> verify(bool Function() checkPin) => _lock.synchronized(() async {
+    retryAfterSeconds = 5;
+    try {
+      final stored = await read();
+      var failures = 0;
+      var blockedUntil = 0;
+      if (stored != null) {
+        final decoded = jsonDecode(stored);
+        if (decoded is! Map<String, dynamic>) return false;
+        final count = decoded['failures'];
+        final until = decoded['blockedUntil'];
+        if (count is! int ||
+            count < 0 ||
+            count > 7 ||
+            until is! int ||
+            until < 0) {
           return false;
         }
-      });
+        failures = count;
+        blockedUntil = until;
+      }
+      final time = now().millisecondsSinceEpoch;
+      if (blockedUntil > time) {
+        retryAfterSeconds = ((blockedUntil - time + 999) ~/ 1000).clamp(1, 300);
+        return false;
+      }
+
+      // Persist an attempt before comparing the PIN.
+      final nextFailures = (failures + 1).clamp(1, 7);
+      retryAfterSeconds = (5 * (1 << (nextFailures - 1))).clamp(5, 300);
+      await _persist(nextFailures, time + retryAfterSeconds * 1000);
+      if (!checkPin()) return false;
+      await _persist(0, 0);
+      retryAfterSeconds = 0;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  });
 
   Future<void> resetAfterBiometric() => _lock.synchronized(() async {
     await _persist(0, 0);

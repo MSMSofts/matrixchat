@@ -84,7 +84,8 @@ class SettingsSecurityView extends StatelessWidget {
                     title: Localizations.localeOf(context).languageCode == 'fa'
                         ? 'اعلان خصوصی'
                         : 'Private notifications',
-                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
                         ? 'محتوا و نام فرستنده در اعلان پیام نمایش داده نمی‌شود.'
                         : 'Hide message content and sender in message notifications.',
                     setting: AppSettings.privateNotifications,
@@ -93,7 +94,8 @@ class SettingsSecurityView extends StatelessWidget {
                     title: Localizations.localeOf(context).languageCode == 'fa'
                         ? 'ارسال فقط در اتاق رمزنگاری‌شده'
                         : 'Encrypted rooms only',
-                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
                         ? 'ارسال پیام معمولی بدون رمزنگاری مسدود می‌شود.'
                         : 'Block plaintext message sends.',
                     setting: AppSettings.requireEncryptedRooms,
@@ -102,7 +104,8 @@ class SettingsSecurityView extends StatelessWidget {
                     title: Localizations.localeOf(context).languageCode == 'fa'
                         ? 'الزام تأیید هویت مخاطبان'
                         : 'Require verified identities',
-                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
                         ? 'در مسیرهای ارسال بررسی‌شده، تأیید هویت لازم است.'
                         : 'Require verified identities in guarded send flows.',
                     setting: AppSettings.requireVerifiedIdentities,
@@ -111,7 +114,8 @@ class SettingsSecurityView extends StatelessWidget {
                     title: Localizations.localeOf(context).languageCode == 'fa'
                         ? 'ذخیره پیش‌نویس بدون رمزنگاری'
                         : 'Persist unencrypted drafts',
-                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
                         ? 'در حالت خاموش، پیش‌نویس فقط در ویرایشگر باقی می‌ماند.'
                         : 'When off, new drafts remain in the editor only.',
                     setting: AppSettings.persistPlaintextDrafts,
@@ -120,7 +124,8 @@ class SettingsSecurityView extends StatelessWidget {
                     title: Localizations.localeOf(context).languageCode == 'fa'
                         ? 'کش دائمی رسانه'
                         : 'Persistent media cache',
-                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
                         ? 'خاموش: فقط فایل‌های در انتظار ارسال نگهداری می‌شوند. برای اعمال کامل برنامه را دوباره اجرا کنید.'
                         : 'Off limits regular disk caching; pending uploads remain protected. Restart to apply.',
                     setting: AppSettings.persistMediaCache,
