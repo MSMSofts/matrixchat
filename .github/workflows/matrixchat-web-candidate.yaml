@@ -1,0 +1,88 @@
+name: MatrixChat Web Release Candidate
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: matrixchat-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Never sign arbitrary PR or branch code. This workflow becomes available
+    # after review and merge into main. No automatic store or GitHub release.
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - name: Check release prerequisites
+        run: |
+          flutter pub get --enforce-lockfile
+          dart format --output=none --set-exit-if-changed lib/ test/
+          flutter analyze
+          flutter test
+      - name: Build twice and compare file hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          export TZ=UTC LC_ALL=C
+          build_web() {
+            flutter clean
+            ./scripts/prepare-web.sh
+            flutter pub get --enforce-lockfile
+            flutter build web --no-pub --dart-define=FLUTTER_WEB_CANVASKIT_URL=canvaskit/ --release
+          }
+          manifest() {
+            (cd build/web && find . -type f -print0 | sort -z | xargs -0 sha256sum)
+          }
+          build_web
+          manifest > "$RUNNER_TEMP/web-first.sha256"
+          build_web
+          manifest > "$RUNNER_TEMP/web-second.sha256"
+          diff -u "$RUNNER_TEMP/web-first.sha256" "$RUNNER_TEMP/web-second.sha256"
+          mkdir -p dist
+          cp "$RUNNER_TEMP/web-second.sha256" dist/web-files.sha256
+          dart pub deps --json > "$RUNNER_TEMP/dart-dependencies.json"
+          python3 scripts/dart_sbom.py "$RUNNER_TEMP/dart-dependencies.json" dist/matrixchat-dart.cdx.json
+          tar --sort=name --mtime="@${SOURCE_DATE_EPOCH}" --owner=0 --group=0 --numeric-owner --format=gnu -cf - -C build web -C "$GITHUB_WORKSPACE" deploy/nginx/matrixchat.conf | gzip -n > dist/matrixchat-web.tar.gz
+          (cd dist && sha256sum matrixchat-web.tar.gz matrixchat-dart.cdx.json web-files.sha256 > SHA256SUMS)
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-web-candidate
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  attest:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: matrixchat-web-candidate
+          path: dist/
+      - run: cd dist && sha256sum --strict -c SHA256SUMS
+      - name: Sign build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-path: dist/matrixchat-web.tar.gz
+      - name: Attest Dart SBOM
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34
+        with:
+          subject-path: dist/matrixchat-web.tar.gz
+          sbom-path: dist/matrixchat-dart.cdx.json
