@@ -6,6 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:matrix/matrix.dart';
 
 void main() {
+  test('account names cannot escape the local database directory', () {
+    for (final name in ['', '.', '..', '../other', '/absolute', r'..\other']) {
+      expect(SecurityPolicy.isSafeClientName(name), isFalse);
+    }
+    expect(SecurityPolicy.isSafeClientName('MatrixChat'), isTrue);
+  });
+
   test('permissive and unknown key-sharing policies fail closed', () {
     for (final value in ['all', 'crossVerifiedIfEnabled', '', 'invalid']) {
       expect(SecurityPolicy.keySharing(value), ShareKeysWith.verifiedOnly);

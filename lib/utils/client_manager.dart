@@ -33,9 +33,9 @@ abstract class ClientManager {
     try {
       final clientNamesList = store.getStringList(clientNamespace) ?? [];
       clientNames.addAll(clientNamesList);
-    } catch (e, s) {
-      Logs().w('Client names in store are corrupted', e, s);
-      await store.remove(clientNamespace);
+    } catch (_) {
+      // Do not discard the account index or create a replacement account.
+      throw const SecurityStorageException();
     }
     if (clientNames.isEmpty) {
       clientNames.add(PlatformInfos.appDisplayName);
@@ -62,7 +62,9 @@ abstract class ClientManager {
         ),
       );
     }
-    if (clients.length > 1 && clients.any((c) => !c.isLogged())) {
+    if (initialize &&
+        clients.length > 1 &&
+        clients.any((c) => !c.isLogged())) {
       final loggedOutClients = clients.where((c) => !c.isLogged()).toList();
       for (final client in loggedOutClients) {
         Logs().w(

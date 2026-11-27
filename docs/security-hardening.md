@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 MatrixChat contributors
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 # MatrixChat security hardening — R1
 
 Status: implementation candidate, not independently audited. Do not ship or merge until tests and migration checks pass.
@@ -8,7 +13,8 @@ Status: implementation candidate, not independently audited. Do not ship or merg
 - Existing permissive or invalid key-sharing settings resolve to verified-only. This is the SDK key-sharing policy, not proof of all outbound session key flows; verify those separately.
 - Private message notifications default on; regular message previews can be explicitly re-enabled. Incoming call presentation and other platform notification paths need separate review.
 - Reduced Matrix SDK logging, generic startup errors, removal of automatic/raw upstream error-reporting URLs, new-install privacy defaults.
-- Unit tests for key resolution and trust policies.
+- Reject unknown push account names and path separators in database account names. Do not remove saved accounts during uninitialized background client creation.
+- Unit tests for key resolution, local account names, and trust policies.
 
 ## Compatibility and recovery
 Back up encrypted databases and recovery keys before testing. Never clear application data to resolve a secure-startup error. Existing native plaintext databases are deliberately not auto-migrated. Design an authenticated, transactional export/import migration with integrity verification and recovery before upgrading such accounts. Existing explicit privacy preferences other than key sharing may remain. Web storage remains the upstream implementation; it is not covered by the native SQLCipher guarantee. Background isolates and simultaneous processes need concurrency tests, including first-launch key creation and keychain availability. Older notifications may remain visible.

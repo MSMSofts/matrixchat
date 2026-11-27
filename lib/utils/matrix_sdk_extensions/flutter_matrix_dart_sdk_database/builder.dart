@@ -20,6 +20,10 @@ import 'cipher.dart';
 
 Future<DatabaseApi> flutterMatrixSdkDatabaseBuilder(String clientName) async {
   try {
+    if (!SecurityPolicy.isSafeClientName(clientName) ||
+        (!kIsWeb && PlatformInfos.isWindows && clientName.contains(':'))) {
+      throw const SecurityStorageException();
+    }
     return await _constructDatabase(clientName);
   } catch (_) {
     // Preserve the database and key. Never retry with a fresh database.
@@ -85,7 +89,6 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
     options: OpenDatabaseOptions(
       version: 1,
       onConfigure: (db) async {
-        await helper.applyPragmaKey(db, ensureIncrementalAutoVacuum: true);
         final cipherVersion = await db.rawQuery('PRAGMA cipher_version');
         if (cipherVersion.isEmpty ||
             cipherVersion.first.values.every(
@@ -93,6 +96,7 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
             )) {
           throw const SecurityStorageException();
         }
+        await helper.applyPragmaKey(db, ensureIncrementalAutoVacuum: true);
         await db.rawQuery('SELECT count(*) FROM sqlite_master');
       },
     ),

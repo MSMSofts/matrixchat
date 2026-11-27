@@ -27,6 +27,12 @@ abstract final class SecurityPolicy {
     return ShareKeysWith.verifiedOnly;
   }
 
+  static bool isSafeClientName(String name) =>
+      name.isNotEmpty &&
+      name != '.' &&
+      name != '..' &&
+      !name.contains(RegExp(r'[/\\\x00]'));
+
   static String generateStorageKey() {
     final random = Random.secure();
     final bytes = List<int>.generate(32, (_) => random.nextInt(256));

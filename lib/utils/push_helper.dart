@@ -118,6 +118,14 @@ Future<void> _tryPushHelper(
 
   final clientName = notification.clientName;
   final store = await AppSettings.init();
+  // Push input must never create an unknown local account or database.
+  if (clientName != null &&
+      !(store.getStringList(ClientManager.clientNamespace) ?? []).contains(
+        clientName,
+      ) &&
+      !(clients?.any((client) => client.clientName == clientName) ?? false)) {
+    return;
+  }
 
   final client = clientName == null
       ? (clients?.first ??
