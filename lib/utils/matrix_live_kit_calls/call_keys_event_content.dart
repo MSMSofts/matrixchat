@@ -12,6 +12,7 @@ class CallKeysEvent extends ToDeviceEvent {
     required super.sender,
     required super.type,
     required super.content,
+    super.encryptedContent,
   });
 
   factory CallKeysEvent.fromToDeviceEvent(ToDeviceEvent event) =>
@@ -19,6 +20,7 @@ class CallKeysEvent extends ToDeviceEvent {
         content: event.content,
         sender: event.sender,
         type: event.type,
+        encryptedContent: event.encryptedContent,
       );
 
   CallKeysEventContent get callKeysContent =>
