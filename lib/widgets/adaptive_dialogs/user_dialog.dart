@@ -260,11 +260,15 @@ class UserDialog extends StatelessWidget {
                             initialState: [
                               if (client.encryptionEnabled &&
                                   (AppSettings.requireEncryptedRooms.value ||
-                                      AppSettings.requireVerifiedIdentities.value))
+                                      AppSettings
+                                          .requireVerifiedIdentities
+                                          .value))
                                 StateEvent(
                                   type: EventTypes.Encryption,
                                   content: RoomCryptoPolicy.encryptionContent(
-                                    strict: AppSettings.requireVerifiedIdentities.value,
+                                    strict: AppSettings
+                                        .requireVerifiedIdentities
+                                        .value,
                                   ),
                                 ),
                             ],

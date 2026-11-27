@@ -75,22 +75,20 @@ class SettingsSecurityView extends StatelessWidget {
                   ),
                   for (final preset in SecurityPreset.values)
                     ListTile(
-                      title: Text(
-                        switch (preset) {
-                          SecurityPreset.compatible =>
-                            Localizations.localeOf(context).languageCode == 'fa'
-                                ? 'سازگار با Matrix'
-                                : 'Matrix compatible',
-                          SecurityPreset.encrypted =>
-                            Localizations.localeOf(context).languageCode == 'fa'
-                                ? 'فقط اتاق رمزنگاری‌شده'
-                                : 'Encrypted rooms only',
-                          SecurityPreset.verified =>
-                            Localizations.localeOf(context).languageCode == 'fa'
-                                ? 'هویت تأییدشده'
-                                : 'Verified identities',
-                        },
-                      ),
+                      title: Text(switch (preset) {
+                        SecurityPreset.compatible =>
+                          Localizations.localeOf(context).languageCode == 'fa'
+                              ? 'سازگار با Matrix'
+                              : 'Matrix compatible',
+                        SecurityPreset.encrypted =>
+                          Localizations.localeOf(context).languageCode == 'fa'
+                              ? 'فقط اتاق رمزنگاری‌شده'
+                              : 'Encrypted rooms only',
+                        SecurityPreset.verified =>
+                          Localizations.localeOf(context).languageCode == 'fa'
+                              ? 'هویت تأییدشده'
+                              : 'Verified identities',
+                      }),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => controller.applySecurityPreset(preset),
                     ),

@@ -29,7 +29,8 @@ Future<bool> showTrustUserInRoomDialog(BuildContext context, Room room) async {
   if (!context.mounted) return false;
   if (AppSettings.requireVerifiedIdentities.value) {
     final activeUsers = users.where(
-      (user) => user.membership == Membership.join ||
+      (user) =>
+          user.membership == Membership.join ||
           user.membership == Membership.invite,
     );
     if (activeUsers.isEmpty) return false;
@@ -68,7 +69,9 @@ Future<bool> showTrustUserInRoomDialog(BuildContext context, Room room) async {
         if (!context.mounted || consent != OkCancelResult.ok) return false;
         final request = await keys.startVerification();
         if (!context.mounted) return false;
-        final success = await KeyVerificationDialog(request: request).show(context);
+        final success = await KeyVerificationDialog(
+          request: request,
+        ).show(context);
         if (!context.mounted || success != true) return false;
         final updated = room.client.userDeviceKeys[user.id]?.masterKey;
         if (updated?.publicKey != publicKey || updated?.verified != true) {
