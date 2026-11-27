@@ -8,6 +8,7 @@ import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/security/security_policy.dart';
+import 'package:fluffychat/security/security_presets.dart';
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
@@ -59,6 +60,41 @@ class SettingsSecurityView extends StatelessWidget {
               }
               return Column(
                 children: [
+                  ListTile(
+                    leading: const Icon(Icons.security),
+                    title: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'مرکز امنیت MatrixChat'
+                          : 'MatrixChat Security Center',
+                    ),
+                    subtitle: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'تنظیمات پیشنهادی را یکجا اعمال کنید.'
+                          : 'Apply a bundle of security settings.',
+                    ),
+                  ),
+                  for (final preset in SecurityPreset.values)
+                    ListTile(
+                      title: Text(
+                        switch (preset) {
+                          SecurityPreset.compatible =>
+                            Localizations.localeOf(context).languageCode == 'fa'
+                                ? 'سازگار با Matrix'
+                                : 'Matrix compatible',
+                          SecurityPreset.encrypted =>
+                            Localizations.localeOf(context).languageCode == 'fa'
+                                ? 'فقط اتاق رمزنگاری‌شده'
+                                : 'Encrypted rooms only',
+                          SecurityPreset.verified =>
+                            Localizations.localeOf(context).languageCode == 'fa'
+                                ? 'هویت تأییدشده'
+                                : 'Verified identities',
+                        },
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => controller.applySecurityPreset(preset),
+                    ),
+                  Divider(color: theme.dividerColor),
                   ListTile(
                     title: Text(
                       L10n.of(context).privacy,

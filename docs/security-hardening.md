@@ -78,3 +78,7 @@ Preserve compatibility with Matrix and upstream license notices. Do not introduc
 ## R6 — build supply-chain controls
 - Web preparation pins the LiveKit E2EE worker to the exact source commit underlying locked livekit_client 2.13.2. Vodozemac 0.10.0 and native_imaging 1.0.0 web archives must match the upstream release asset SHA-256 digests. Downloads require HTTPS and use an isolated temporary directory. Version upgrades require explicit review and new pins.
 - Security workflow pins three action revisions, enforces the Dart lockfile and checks shell syntax. Upstream release asset digests are integrity anchors, not independent signatures or a reproducible build attestation. Native build dependencies, other workflows, transitive toolchains, full SBOM/CVE scanning and signed releases remain to be validated.
+
+## R7 — user security presets and dependency audit
+- Security settings now offer three explicit presets: Matrix compatible, encrypted rooms only, and verified identities. They are one-time preference bundles, not mandatory policy or certification. Restart is required to apply all effects. Partial persistence errors are shown to the user. Existing manual settings remain editable.
+- Dedicated CI jobs run checksum-pinned OSV-Scanner on supported lockfiles and export the resolved Dart dependency graph as an artifact. This inventory is not a full native/container SBOM. Findings require review and remediation; absence of findings is not a security guarantee.

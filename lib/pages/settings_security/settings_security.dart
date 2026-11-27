@@ -6,6 +6,7 @@
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/security/security_policy.dart';
+import 'package:fluffychat/security/security_presets.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_text_input_dialog.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
@@ -171,6 +172,52 @@ class SettingsSecurityController extends State<SettingsSecurity> {
   }
 
   Future<void> dehydrateAction() => Matrix.of(context).dehydrateAction(context);
+
+  bool _applyingPreset = false;
+
+  Future<void> applySecurityPreset(SecurityPreset preset) async {
+    if (_applyingPreset) return;
+    final persian = Localizations.localeOf(context).languageCode == 'fa';
+    final consent = await showOkCancelAlertDialog(
+      context: context,
+      title: persian ? 'اعمال تنظیمات امنیتی' : 'Apply security settings',
+      message: persian
+          ? 'تنظیمات فعلی حریم خصوصی و ارسال تغییر می‌کنند. برای اعمال همه تغییرات برنامه را دوباره اجرا کنید.'
+          : 'Current privacy and send settings will change. Restart the app to apply every change.',
+    );
+    if (!mounted || consent != OkCancelResult.ok || _applyingPreset) return;
+    final clients = Matrix.of(context).securityPolicyClients;
+    _applyingPreset = true;
+    try {
+      // Tighten running clients before changing persistent preferences.
+      for (final client in clients) {
+        client.shareKeysWith = ShareKeysWith.verifiedOnly;
+      }
+      await preset.apply();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            persian ? 'تنظیمات اعمال شد.' : 'Security settings applied.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            persian
+                ? 'اعمال کامل ناموفق بود. تنظیمات را بررسی کنید.'
+                : 'Some settings may not have been saved. Review them.',
+          ),
+        ),
+      );
+    } finally {
+      _applyingPreset = false;
+      if (mounted) setState(() {});
+    }
+  }
 
   Future<void> changeShareKeysWith(ShareKeysWith? shareKeysWith) async {
     if (shareKeysWith == null ||
