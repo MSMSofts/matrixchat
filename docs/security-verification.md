@@ -46,3 +46,6 @@ CI results must be reviewed on the current commit. Hardware-backed wrapping of e
 
 ## Additional release checks
 Verify that backup files and package manifests are not served by the web deployment. Confirm the application manifest is not cached persistently. Terminate TLS at the trusted reverse proxy and configure HSTS there only after confirming HTTPS deployment. Verify provenance with `gh attestation verify matrixchat-web.tar.gz --repo MSMSofts/matrixchat` and compare SHA256SUMS from the reviewed candidate. These checks do not replace native signing or independent reproducibility testing.
+
+## Cross-platform test candidates
+The independent candidate workflow builds release-mode artifacts on security-hardening, without production signing, publishing or deployment. Test only with disposable accounts and data on isolated devices/profiles; some inherited identifiers, deep-link schemes, service endpoints, icons and storage namespaces remain. Android candidate uses a distinct package ID and an ephemeral debug signature; it is not a Play Store build. Windows portable distribution is not an isolated data profile. macOS is ad-hoc signed with temporary runner-only entitlement changes, and iOS is unsigned. Review all platform build logs and perform actual launch/login/crypto/RTC tests before release. See docs/build-candidates.md.

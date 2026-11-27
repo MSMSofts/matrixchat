@@ -32,6 +32,10 @@ configurations.all {
 }
 
 
+// CI candidates use a separate Android application ID and ephemeral debug
+// signing. Production release signing remains unchanged.
+val matrixchatCandidate = System.getenv("MATRIXCHAT_CANDIDATE_BUILD") == "true"
+
 android {
     namespace = "chat.fluffy.fluffychat"
     // Workaround for https://github.com/juliansteenbakker/flutter_secure_storage/issues/1224
@@ -66,7 +70,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "chat.fluffy.fluffychat"
+        applicationId = if (matrixchatCandidate) "com.msmsofts.matrixchat.candidate" else "chat.fluffy.fluffychat"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -78,7 +82,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName(if (matrixchatCandidate) "debug" else "release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

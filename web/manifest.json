@@ -1,11 +1,11 @@
 {
-    "name": "FluffyChat",
-    "short_name": "FluffyChat",
+    "name": "MatrixChat",
+    "short_name": "MatrixChat",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
     "theme_color": "#41a2bc",
-    "description": "The cutest messenger in the Matrix network",
+    "description": "An independent Matrix client",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
