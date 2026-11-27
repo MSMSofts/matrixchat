@@ -219,9 +219,24 @@ class SettingsSecurityController extends State<SettingsSecurity> {
     }
   }
 
+  Future<void> changeVerifiedIdentityMode(bool required) async {
+    if (_applyingPreset) return;
+    if (!required && !await _confirmCurrentPin()) return;
+    if (!mounted) return;
+    final clients = Matrix.of(context).securityPolicyClients;
+    // Never leave an existing client with a looser SDK policy in strict mode.
+    for (final client in clients) {
+      client.shareKeysWith = ShareKeysWith.verifiedOnly;
+    }
+    await AppSettings.shareKeysWith.setItem(ShareKeysWith.verifiedOnly.name);
+    await AppSettings.requireVerifiedIdentities.setItem(required);
+    if (mounted) setState(() {});
+  }
+
   Future<void> changeShareKeysWith(ShareKeysWith? shareKeysWith) async {
     if (shareKeysWith == null ||
-        !SecurityPolicy.allowedKeySharing.contains(shareKeysWith)) {
+        !SecurityPolicy.allowedKeySharing.contains(shareKeysWith) ||
+        AppSettings.requireVerifiedIdentities.value) {
       return;
     }
     await AppSettings.shareKeysWith.setItem(shareKeysWith.name);

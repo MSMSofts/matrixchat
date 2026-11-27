@@ -28,6 +28,7 @@ Future<bool> showTrustUserInRoomDialog(BuildContext context, Room room) async {
   final users = await room.requestParticipants();
   if (!context.mounted) return false;
   if (AppSettings.requireVerifiedIdentities.value) {
+    room.client.shareKeysWith = ShareKeysWith.verifiedOnly;
     final activeUsers = users.where(
       (user) =>
           user.membership == Membership.join ||

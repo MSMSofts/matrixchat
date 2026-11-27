@@ -169,6 +169,24 @@ void main() {
     expect(inner.requests, 1);
   });
 
+  test('strict timeline guard rejects unknown event types and path prefixes', () {
+    const base = 'https://matrix.org/proxy/_matrix/client/v3/rooms/!r:matrix.org/send';
+    expect(
+      SecurityPolicy.isPlaintextTimelineSend(
+        'PUT',
+        Uri.parse('$base/com.example.custom/1'),
+      ),
+      isTrue,
+    );
+    expect(
+      SecurityPolicy.isPlaintextTimelineSend(
+        'PUT',
+        Uri.parse('$base/m.room.encrypted/1'),
+      ),
+      isFalse,
+    );
+  });
+
   test('strict policy does not block state events or GET requests', () {
     expect(
       SecurityPolicy.isPlaintextTimelineSend(

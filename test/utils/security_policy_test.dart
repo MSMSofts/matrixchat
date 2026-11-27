@@ -6,6 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:matrix/matrix.dart';
 
 void main() {
+  test('strict identity mode always requires verified device keys', () {
+    expect(
+      SecurityPolicy.keySharing('crossVerified', requireVerified: true),
+      ShareKeysWith.verifiedOnly,
+    );
+    expect(
+      SecurityPolicy.keySharing('crossVerified'),
+      ShareKeysWith.crossVerified,
+    );
+  });
+
   test('account names cannot escape the local database directory', () {
     for (final name in ['', '.', '..', '../other', '/absolute', r'..\other']) {
       expect(SecurityPolicy.isSafeClientName(name), isFalse);

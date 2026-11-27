@@ -20,7 +20,11 @@ abstract final class SecurityPolicy {
     ShareKeysWith.crossVerified,
   };
 
-  static ShareKeysWith keySharing(String stored) {
+  static ShareKeysWith keySharing(
+    String stored, {
+    bool requireVerified = false,
+  }) {
+    if (requireVerified) return ShareKeysWith.verifiedOnly;
     for (final policy in allowedKeySharing) {
       if (policy.name == stored) return policy;
     }
@@ -45,30 +49,21 @@ abstract final class SecurityPolicy {
         const {'localhost', '127.0.0.1', '::1', '10.0.2.2'}.contains(uri.host);
   }
 
-  /// Detect plaintext message-like timeline events sent through the client
-  /// API. State events and encrypted events are intentionally not blocked.
+  /// Strict mode accepts only the encrypted event type on timeline send APIs.
+  /// Unknown event types cannot bypass a plaintext blacklist. State events
+  /// use a different endpoint and are not covered by this check.
   static bool isPlaintextTimelineSend(String method, Uri uri) {
     if (method != 'PUT' && method != 'POST') return false;
     final path = uri.pathSegments;
-    if (path.length < 7 ||
-        path[0] != '_matrix' ||
-        path[1] != 'client' ||
-        path[3] != 'rooms' ||
-        path[5] != 'send') {
-      return false;
+    for (var i = 0; i + 6 < path.length; i++) {
+      if (path[i] == '_matrix' &&
+          path[i + 1] == 'client' &&
+          path[i + 3] == 'rooms' &&
+          path[i + 5] == 'send') {
+        return path[i + 6] != EventTypes.Encrypted;
+      }
     }
-    final type = path[6];
-    return const {
-      'm.room.message',
-      'm.sticker',
-      'm.poll.start',
-      'm.poll.response',
-      'm.poll.end',
-      'org.matrix.msc3381.poll.start',
-      'org.matrix.msc3381.poll.response',
-      'org.matrix.msc3381.poll.end',
-      'm.reaction',
-    }.contains(type);
+    return false;
   }
 
   static String generateStorageKey() {

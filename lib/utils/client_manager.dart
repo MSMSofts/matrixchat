@@ -110,6 +110,7 @@ abstract class ClientManager {
   ) async {
     final shareKeysWith = SecurityPolicy.keySharing(
       AppSettings.shareKeysWith.value,
+      requireVerified: AppSettings.requireVerifiedIdentities.value,
     );
     final enableSoftLogout = AppSettings.enableSoftLogout.value;
 

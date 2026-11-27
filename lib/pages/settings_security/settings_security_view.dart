@@ -134,15 +134,19 @@ class SettingsSecurityView extends StatelessWidget {
                         : 'Block plaintext message sends.',
                     setting: AppSettings.requireEncryptedRooms,
                   ),
-                  SettingsSwitchListTile.adaptive(
-                    title: Localizations.localeOf(context).languageCode == 'fa'
-                        ? 'الزام تأیید هویت مخاطبان'
-                        : 'Require verified identities',
-                    subtitle:
-                        Localizations.localeOf(context).languageCode == 'fa'
-                        ? 'در مسیرهای ارسال بررسی‌شده، تأیید هویت لازم است.'
-                        : 'Require verified identities in guarded send flows.',
-                    setting: AppSettings.requireVerifiedIdentities,
+                  SwitchListTile.adaptive(
+                    title: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'الزام تأیید هویت مخاطبان'
+                          : 'Require verified identities',
+                    ),
+                    subtitle: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'در مسیرهای ارسال بررسی‌شده، تأیید هویت لازم است.'
+                          : 'Require verified identities in guarded send flows.',
+                    ),
+                    value: AppSettings.requireVerifiedIdentities.value,
+                    onChanged: controller.changeVerifiedIdentityMode,
                   ),
                   if (!PlatformInfos.isWeb)
                     SettingsSwitchListTile.adaptive(
@@ -239,7 +243,9 @@ class SettingsSecurityView extends StatelessWidget {
                           AppConfig.borderRadius / 2,
                         ),
                         underline: const SizedBox.shrink(),
-                        value: Matrix.of(context).client.shareKeysWith,
+                        value: AppSettings.requireVerifiedIdentities.value
+                            ? ShareKeysWith.verifiedOnly
+                            : Matrix.of(context).client.shareKeysWith,
                         items: SecurityPolicy.allowedKeySharing
                             .map(
                               (share) => DropdownMenuItem(
@@ -248,7 +254,9 @@ class SettingsSecurityView extends StatelessWidget {
                               ),
                             )
                             .toList(),
-                        onChanged: controller.changeShareKeysWith,
+                        onChanged: AppSettings.requireVerifiedIdentities.value
+                            ? null
+                            : controller.changeShareKeysWith,
                       ),
                     ),
                   ),
