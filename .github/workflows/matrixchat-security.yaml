@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: matrixchat-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   security-tests:
     runs-on: ubuntu-latest
@@ -22,7 +26,13 @@ jobs:
           flutter-version-file: .fvmrc
       - uses: dtolnay/rust-toolchain@stable
       - run: flutter pub get
+      - name: Check formatting (report diff)
+        run: |
+          dart format lib/ test/
+          git diff -- lib/ test/
+          git diff --exit-code -- lib/ test/
       - name: Static analysis
+        if: ${{ !cancelled() }}
         run: flutter analyze
       - name: Security unit tests
         if: ${{ !cancelled() }}

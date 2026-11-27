@@ -10,6 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: webiny/action-conventional-commits@v1.4.2
+        with:
+          allowed-commit-types: feat,fix,docs,style,refactor,test,build,perf,ci,chore,revert,merge,wip,security
       - name: Check licenses
         uses: fsfe/reuse-action@v6
       - run: ./scripts/generate-locale-config.sh

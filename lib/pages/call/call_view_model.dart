@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
@@ -135,7 +134,7 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
       for (final member in room.getActiveMatrixRtcMembers())
         if (member.senderId != null &&
             member.deviceId != null &&
-            member.membershipId == '${member.senderId}:${member.deviceId}')
+            member.membershipId != null)
           '${member.senderId}:${member.deviceId}',
     }..remove(ownMemberId);
 

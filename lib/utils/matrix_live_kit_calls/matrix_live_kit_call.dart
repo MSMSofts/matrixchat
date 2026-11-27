@@ -280,6 +280,13 @@ extension MatrixRtcRoomExtension on Room {
       final uri = Uri.tryParse(url);
       return uri != null && RtcSecurity.permitsFocus(uri);
     }).toSet().toList();
+    if (AppSettings.requireVerifiedIdentities.value) {
+      // Do not send an OpenID token to an arbitrary room-advertised focus
+      // when strict identity mode is enabled. Restrict to the homeserver's
+      // advertised/configured RTC services.
+      final configured = (await client.getLiveKitServiceUrls()).toSet();
+      urls = urls.where(configured.contains).toList();
+    }
     if (urls.isEmpty) {
       throw Exception('This server does not support livekit calls!');
     }
