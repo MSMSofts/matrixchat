@@ -1655,7 +1655,6 @@
         }
     },
     "jumpToLastReadMessage": "Az utoljára olvasott üzenethez ugrás",
-    "reportErrorDescription": "😭 Sajnos, valami félresiklott. Ha kívánja, jelezheti a bugot a fejlesztőknek.",
     "removeYourAvatar": "Profilképének törlése",
     "@removeYourAvatar": {
         "type": "String",
@@ -2107,7 +2106,6 @@
     "customEmojisAndStickersBody": "Egyedi hangulatjelek és matricák hozzáadása, amelyek bármely csevegésben felhasználhatóak.",
     "publicChatAddresses": "Nyilvános csevegés címek",
     "createNewAddress": "Új cím létrehozása",
-    "noDatabaseEncryption": "Adatbázis titkosítás nem támogatott ezen a platformon",
     "thereAreCountUsersBlocked": "Jelenleg {count} felhasználó van letiltva.",
     "@thereAreCountUsersBlocked": {
         "type": "String",

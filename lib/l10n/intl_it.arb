@@ -1591,7 +1591,6 @@
         "placeholders": {}
     },
     "commandHint_cuddle": "Invia una coccola",
-    "reportErrorDescription": "😭 Oh no. Qualcosa è andato storto. Se vuoi, puoi segnalare questo bug agli sviluppatori.",
     "unsupportedAndroidVersion": "Versione di Android non supportata",
     "oneClientLoggedOut": "Uno dei tuoi client è stato disconnesso",
     "setColorTheme": "Imposta tema colore:",
@@ -2082,7 +2081,6 @@
     "joinSpace": "Unisciti allo spazio",
     "commandHint_ignore": "Ignora il Matrix ID fornito",
     "commandHint_unignore": "Ignora il Matrix ID specificato",
-    "noDatabaseEncryption": "La crittografia del database non è supportata su questa piattaforma",
     "knocking": "Bussare",
     "sendReadReceipts": "Invia ricevute di lettura",
     "publicChatAddresses": "Indirizzi di chat pubblici",

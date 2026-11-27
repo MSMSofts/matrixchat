@@ -1880,7 +1880,6 @@
     "reopenChat": "Ponovo otvori chat",
     "openLinkInBrowser": "Otvori poveznicu u pregledniku",
     "report": "prijavi",
-    "reportErrorDescription": "😭 Joj! Dogodila se greška. Pokušaj ponovo kasnije. Ako želiš, grešku možeš prijaviti programerima.",
     "notAnImage": "Nije slikovna datoteka.",
     "importNow": "Uvezi sada",
     "importEmojis": "Uvezi emoji slike",
@@ -2139,7 +2138,6 @@
         }
     },
     "commandHint_unignore": "Poništi zanemarivanje navedenog matrix ID-a",
-    "noDatabaseEncryption": "Šifriranje baze podataka nije podržano na ovoj platformi",
     "thereAreCountUsersBlocked": "Broj trenutačno blokiranih korisnika: {count}.",
     "@thereAreCountUsersBlocked": {
         "type": "String",

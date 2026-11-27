@@ -1884,7 +1884,6 @@
     "jump": "Lompat",
     "openLinkInBrowser": "Buka tautan dalam peramban",
     "report": "laporkan",
-    "reportErrorDescription": "😭 Aduh. Ada yang salah. Jika kamu mau, kamu bisa melaporkan kutu ini kepada para pengembang.",
     "notAnImage": "Bukan berkas gambar.",
     "importNow": "Impor sekarang",
     "importFromZipFile": "Impor dari berkas .zip",
@@ -2101,7 +2100,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Enkripsi basis data tidak didukung di platform ini",
     "customEmojisAndStickersBody": "Tambakan atau bagikan emoji atau stiker kustom yang dapat digunakan dalam obrolan apa pun.",
     "hideRedactedMessages": "Sembunyikan pesan yang dihapus",
     "appLockDescription": "Kunci aplikasi ketika tidak digunakan dengan kode PIN",
@@ -2765,8 +2763,6 @@
         }
     },
     "compressingVideo": "Mengompresi video...",
-    "shareCrashReports": "Bagikan laporan kerusakan",
-    "shareCrashReportsDescription": "Otomatis membagikan laporan kerusakan kepada pengembang?",
     "countActiveCallMembers": "{count} anggota panggilan aktif",
     "@countActiveCallMembers": {
         "placeholders": {
