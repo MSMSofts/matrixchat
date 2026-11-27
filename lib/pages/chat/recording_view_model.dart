@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -40,10 +41,13 @@ class RecordingViewModelState extends State<RecordingViewModel> {
   final List<double> amplitudeTimeline = [];
 
   String? fileName;
+  String? _ownedRecordingPath;
+  bool _sending = false;
 
   bool isPaused = false;
 
   Future<void> startRecording(Room room) async {
+    if (_sending || isRecording) return;
     room.client.getConfig(); // Preload server file configuration.
     if (PlatformInfos.isAndroid) {
       final info = await DeviceInfoPlugin().androidInfo;
@@ -75,6 +79,7 @@ class RecordingViewModelState extends State<RecordingViewModel> {
       if (!kIsWeb) {
         final tempDir = await getTemporaryDirectory();
         path = path_lib.join(tempDir.path, fileName);
+        _ownedRecordingPath = path;
       }
 
       final result = await audioRecorder.hasPermission();
@@ -104,13 +109,13 @@ class RecordingViewModelState extends State<RecordingViewModel> {
       if (!mounted) return;
       setState(() => duration = Duration.zero);
       _subscribe();
-    } catch (e, s) {
-      Logs().w('Unable to start voice message recording', e, s);
+    } catch (_) {
+      Logs().w('Unable to start voice message recording.');
       if (!mounted) return;
       showOkAlertDialog(
         context: context,
         title: L10n.of(context).oopsSomethingWentWrong,
-        message: e.toString(),
+        message: L10n.of(context).oopsSomethingWentWrong,
       );
       setState(_reset);
     }
@@ -127,7 +132,10 @@ class RecordingViewModelState extends State<RecordingViewModel> {
     _recorderSubscription = Timer.periodic(const Duration(milliseconds: 100), (
       _,
     ) async {
-      final amplitude = await _audioRecorder!.getAmplitude();
+      final recorder = _audioRecorder;
+      if (recorder == null || !mounted) return;
+      final amplitude = await recorder.getAmplitude();
+      if (!mounted || !identical(recorder, _audioRecorder)) return;
       var value = 100 + amplitude.current * 2;
       value = value < 1 ? 1 : value;
       amplitudeTimeline.add(value);
@@ -140,8 +148,13 @@ class RecordingViewModelState extends State<RecordingViewModel> {
   void _reset() {
     WakelockPlus.disable();
     _recorderSubscription?.cancel();
-    _audioRecorder?.stop();
+    final recorder = _audioRecorder;
+    final ownedPath = _ownedRecordingPath;
     _audioRecorder = null;
+    _ownedRecordingPath = null;
+    if (recorder != null) {
+      unawaited(_cancelAndDispose(recorder, ownedPath));
+    }
 
     fileName = null;
     duration = Duration.zero;
@@ -149,7 +162,37 @@ class RecordingViewModelState extends State<RecordingViewModel> {
     isPaused = false;
   }
 
+  Future<void> _deleteOwnedRecording(String? ownedPath) async {
+    if (kIsWeb || ownedPath == null) return;
+    try {
+      final file = File(ownedPath);
+      if (await file.exists()) await file.delete();
+    } catch (_) {
+      Logs().w('Temporary voice file cleanup failed.');
+    }
+  }
+
+  Future<void> _cancelAndDispose(
+    AudioRecorder recorder,
+    String? ownedPath,
+  ) async {
+    try {
+      await recorder.cancel();
+    } catch (_) {
+      Logs().w('Voice recording cancellation failed.');
+    } finally {
+      try {
+        await recorder.dispose();
+      } catch (_) {
+        Logs().w('Voice recorder disposal failed.');
+      } finally {
+        await _deleteOwnedRecording(ownedPath);
+      }
+    }
+  }
+
   void cancel() {
+    if (_sending) return;
     setState(_reset);
   }
 
@@ -178,22 +221,40 @@ class RecordingViewModelState extends State<RecordingViewModel> {
     )
     onSend,
   ) async {
+    if (_sending || _audioRecorder == null) return;
+    _sending = true;
     _recorderSubscription?.cancel();
-    final path = await _audioRecorder?.stop();
-
-    if (path == null) throw ('Recording failed!');
-    const waveCount = AudioPlayerWidget.wavesCount;
-    final step = amplitudeTimeline.length < waveCount
-        ? 1
-        : (amplitudeTimeline.length / waveCount).round();
-    final waveform = <int>[];
-    for (var i = 0; i < amplitudeTimeline.length; i += step) {
-      waveform.add((amplitudeTimeline[i] / 100 * 1024).round());
+    final recorder = _audioRecorder!;
+    final ownedPath = _ownedRecordingPath;
+    _audioRecorder = null;
+    _ownedRecordingPath = null;
+    try {
+      final path = await recorder.stop();
+      if (path == null) throw StateError('Recording failed.');
+      const waveCount = AudioPlayerWidget.wavesCount;
+      final step = amplitudeTimeline.length < waveCount
+          ? 1
+          : (amplitudeTimeline.length / waveCount).round();
+      final waveform = <int>[];
+      for (var i = 0; i < amplitudeTimeline.length; i += step) {
+        waveform.add((amplitudeTimeline[i] / 100 * 1024).round());
+      }
+      final name = fileName;
+      if (name == null || !mounted) return;
+      await onSend(path, duration.inMilliseconds, waveform, name);
+    } finally {
+      try {
+        await recorder.dispose();
+      } finally {
+        await _deleteOwnedRecording(ownedPath);
+        _sending = false;
+        if (mounted) {
+          setState(_reset);
+        } else {
+          WakelockPlus.disable();
+        }
+      }
     }
-
-    onSend(path, duration.inMilliseconds, waveform, fileName!);
-
-    cancel();
   }
 
   @override

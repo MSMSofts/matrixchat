@@ -52,3 +52,5 @@ Preserve compatibility with Matrix and upstream license notices. Do not introduc
 - Event images are no longer retained in the shared application image map. Lock clears global image caches on a best-effort basis; live widget buffers, native media players, and GPU memory are not guaranteed erased.
 - Android main activity sets FLAG_SECURE and disallows cleartext traffic in the main manifest. Screenshots, screen sharing and some debugging workflows may be affected. Other activities and platforms need separate validation.
 - Hardware-backed vault, encrypted persistent media cache, restart-resistant PIN limits, secure draft persistence, and full native/RTC security testing are still outstanding.
+
+- Voice recording cancellation and send completion dispose the recorder and delete the app-owned temporary recording file after the callback completes. Active recording files remain plaintext; crashes can leave files behind. This is cleanup, not guaranteed secure erasure. The current callback does not preserve failed unsent voice drafts.
