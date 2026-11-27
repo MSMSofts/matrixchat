@@ -9,10 +9,7 @@ void main() {
   test('only supported room crypto with enabled SDK is accepted', () {
     const megolm = 'm.megolm.v1.aes-sha2';
     expect(
-      RoomCryptoPolicy.canEncrypt(
-        algorithm: megolm,
-        encryptionEnabled: true,
-      ),
+      RoomCryptoPolicy.canEncrypt(algorithm: megolm, encryptionEnabled: true),
       isTrue,
     );
     for (final algorithm in [null, '', 'm.unknown', megolm]) {

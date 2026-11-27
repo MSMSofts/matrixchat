@@ -9,8 +9,7 @@ abstract final class RoomCryptoPolicy {
   static bool canEncrypt({
     required String? algorithm,
     required bool encryptionEnabled,
-  }) =>
-      encryptionEnabled && algorithm == AlgorithmTypes.megolmV1AesSha2;
+  }) => encryptionEnabled && algorithm == AlgorithmTypes.megolmV1AesSha2;
 
   static bool canEncryptRoom(Room room) => canEncrypt(
     algorithm: room.encryptionAlgorithm,
