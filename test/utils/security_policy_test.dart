@@ -35,17 +35,20 @@ void main() {
     );
   });
 
-  test('missing key with existing database never writes a replacement', () async {
-    await expectLater(
-      SecurityPolicy.resolveStorageKey(
-        read: () async => null,
-        readLegacy: () async => null,
-        write: (_) async => fail('must not write'),
-        hasExistingData: () async => true,
-      ),
-      throwsA(isA<SecurityStorageException>()),
-    );
-  });
+  test(
+    'missing key with existing database never writes a replacement',
+    () async {
+      await expectLater(
+        SecurityPolicy.resolveStorageKey(
+          read: () async => null,
+          readLegacy: () async => null,
+          write: (_) async => fail('must not write'),
+          hasExistingData: () async => true,
+        ),
+        throwsA(isA<SecurityStorageException>()),
+      );
+    },
+  );
 
   test('storage read failure never generates a replacement', () async {
     await expectLater(

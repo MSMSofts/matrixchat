@@ -112,9 +112,7 @@ Future<void> _tryPushHelper(
   required FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin,
 }) async {
   final isBackgroundMessage = clients == null;
-  Logs().v(
-    'Push helper has been started (background=$isBackgroundMessage).',
-  );
+  Logs().v('Push helper has been started (background=$isBackgroundMessage).');
 
   final clientName = notification.clientName;
   final store = await AppSettings.init();

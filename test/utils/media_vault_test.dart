@@ -50,16 +50,19 @@ void main() {
     expect(await vault.get(pending), isNull);
   });
 
-  test('pruning and explicit clear remove expired or selected entries', () async {
-    enabled = true;
-    await vault.store(pending, bytes, 10);
-    await vault.store(remote, bytes, 20);
-    await vault.prune(15);
-    expect(await vault.get(pending), isNull);
-    expect(await vault.get(remote), bytes);
-    await vault.clear();
-    expect(await vault.get(remote), isNull);
-  });
+  test(
+    'pruning and explicit clear remove expired or selected entries',
+    () async {
+      enabled = true;
+      await vault.store(pending, bytes, 10);
+      await vault.store(remote, bytes, 20);
+      await vault.prune(15);
+      expect(await vault.get(pending), isNull);
+      expect(await vault.get(remote), bytes);
+      await vault.clear();
+      expect(await vault.get(remote), isNull);
+    },
+  );
 
   test('oversized ordinary media is not cached', () async {
     enabled = true;

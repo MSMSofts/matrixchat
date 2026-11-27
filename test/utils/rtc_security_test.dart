@@ -12,9 +12,18 @@ void main() {
   test('RTC focus and media endpoints require secure transport', () {
     expect(RtcSecurity.permitsFocus(Uri.parse('https://rtc.example')), isTrue);
     expect(RtcSecurity.permitsFocus(Uri.parse('http://rtc.example')), isFalse);
-    expect(RtcSecurity.permitsFocus(Uri.parse('https://u@rtc.example')), isFalse);
-    expect(RtcSecurity.permitsMediaEndpoint(Uri.parse('wss://rtc.example')), isTrue);
-    expect(RtcSecurity.permitsMediaEndpoint(Uri.parse('ws://rtc.example')), isFalse);
+    expect(
+      RtcSecurity.permitsFocus(Uri.parse('https://u@rtc.example')),
+      isFalse,
+    );
+    expect(
+      RtcSecurity.permitsMediaEndpoint(Uri.parse('wss://rtc.example')),
+      isTrue,
+    );
+    expect(
+      RtcSecurity.permitsMediaEndpoint(Uri.parse('ws://rtc.example')),
+      isFalse,
+    );
   });
 
   test('Olm sender must match the claimed device key', () {
@@ -22,15 +31,35 @@ void main() {
       'algorithm': 'm.olm.v1.curve25519-aes-sha2',
       'sender_key': 'device-key',
     };
-    expect(RtcSecurity.matchesOlmSender(encryptedContent: encrypted, deviceCurveKey: 'device-key'), isTrue);
-    expect(RtcSecurity.matchesOlmSender(encryptedContent: encrypted, deviceCurveKey: 'other'), isFalse);
-    expect(RtcSecurity.matchesOlmSender(encryptedContent: null, deviceCurveKey: 'device-key'), isFalse);
-    final wrapped = CallKeysEvent.fromToDeviceEvent(ToDeviceEvent(
-      sender: '@a:example.org',
-      type: CallKeysEventContent.eventType,
-      content: {},
-      encryptedContent: encrypted,
-    ));
+    expect(
+      RtcSecurity.matchesOlmSender(
+        encryptedContent: encrypted,
+        deviceCurveKey: 'device-key',
+      ),
+      isTrue,
+    );
+    expect(
+      RtcSecurity.matchesOlmSender(
+        encryptedContent: encrypted,
+        deviceCurveKey: 'other',
+      ),
+      isFalse,
+    );
+    expect(
+      RtcSecurity.matchesOlmSender(
+        encryptedContent: null,
+        deviceCurveKey: 'device-key',
+      ),
+      isFalse,
+    );
+    final wrapped = CallKeysEvent.fromToDeviceEvent(
+      ToDeviceEvent(
+        sender: '@a:example.org',
+        type: CallKeysEventContent.eventType,
+        content: {},
+        encryptedContent: encrypted,
+      ),
+    );
     expect(wrapped.encryptedContent, encrypted);
   });
 

@@ -62,10 +62,7 @@ void main() {
   });
 
   test('silent storage write failure cannot authorize PIN', () async {
-    final guard = PinAttemptGuard(
-      read: () async => null,
-      write: (_) async {},
-    );
+    final guard = PinAttemptGuard(read: () async => null, write: (_) async {});
     expect(await guard.verify(() => true), isFalse);
   });
 }

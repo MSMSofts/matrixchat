@@ -56,10 +56,7 @@ void main() {
 
   test('cleartext HTTP is blocked before dispatch', () async {
     final inner = RecordingClient();
-    final guard = NetworkGuard(
-      inner,
-      requireEncryptedTimeline: () => false,
-    );
+    final guard = NetworkGuard(inner, requireEncryptedTimeline: () => false);
     addTearDown(guard.close);
     await expectLater(
       guard.get(Uri.parse('http://matrix.org')),
@@ -70,10 +67,7 @@ void main() {
 
   test('SDK requests do not follow redirects automatically', () async {
     final inner = RecordingClient(statusCode: 302);
-    final guard = NetworkGuard(
-      inner,
-      requireEncryptedTimeline: () => false,
-    );
+    final guard = NetworkGuard(inner, requireEncryptedTimeline: () => false);
     addTearDown(guard.close);
     final response = await guard.get(Uri.parse('https://matrix.org'));
     expect(response.statusCode, 302);
@@ -83,10 +77,7 @@ void main() {
 
   test('strict policy blocks plaintext and permits encrypted events', () async {
     final inner = RecordingClient();
-    final guard = NetworkGuard(
-      inner,
-      requireEncryptedTimeline: () => true,
-    );
+    final guard = NetworkGuard(inner, requireEncryptedTimeline: () => true);
     addTearDown(guard.close);
     const base =
         'https://matrix.org/_matrix/client/v3/rooms/!room:matrix.org/send';
