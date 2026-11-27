@@ -1884,7 +1884,6 @@
     "jump": "Przejdź",
     "removeFromBundle": "Usuń z tego pakietu",
     "openLinkInBrowser": "Otwórz link w przeglądarce",
-    "reportErrorDescription": "😭 O nie! Coś poszło nie tak. Spróbuj ponownie później. Jeśli chcesz, możesz zgłosić ten błąd autorom programu.",
     "setColorTheme": "Ustal styl kolorów:",
     "tryAgain": "Spróbuj ponownie",
     "messagesStyle": "Wiadomości:",
@@ -2051,7 +2050,6 @@
     },
     "sendTypingNotificationsDescription": "Pozostali uczestnicy czatu mogą widzieć kiedy piszesz nową wiadomość.",
     "sendReadReceiptsDescription": "Pozostali uczestnicy czatu mogą widzieć zobaczyć kiedy przeczytasz wiadomość.",
-    "noDatabaseEncryption": "Szyfrowanie bazy danych nie jest obsługiwane na tej platformie",
     "thereAreCountUsersBlocked": "Obecnie jest {count} zablokowanych użytkowników.",
     "@thereAreCountUsersBlocked": {
         "type": "String",

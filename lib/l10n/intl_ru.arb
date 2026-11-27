@@ -1845,7 +1845,6 @@
     "disableEncryptionWarning": "В целях безопасности Вы не можете отключить шифрование в чате, где оно было включено.",
     "noBackupWarning": "Внимание! Без резервного копиирования, Вы потеряете доступ к своим зашифрованным сообщениям. Крайне рекомендуется включить резервное копирование перед выходом.",
     "noOtherDevicesFound": "Другие устройства не найдены",
-    "reportErrorDescription": "😭 О, нет. Что-то пошло не так. При желании вы можете сообщить об этой ошибке разработчикам.",
     "report": "пожаловаться",
     "jumpToLastReadMessage": "Последнее прочитанное сообщение",
     "wasDirectChatDisplayName": "Пустой чат (был {oldDisplayName})",
@@ -2077,7 +2076,6 @@
     "accessAndVisibility": "Доступность и видимость",
     "publicChatAddresses": "Адресы публичного чата",
     "accessAndVisibilityDescription": "Кому разрешено войти в этот чат и как этот чат может быть обнаружен.",
-    "noDatabaseEncryption": "Шифрование базы данных не поддерживается на этой платформе",
     "appLockDescription": "Заблокировать приложение когда не используется пин код",
     "customEmojisAndStickers": "Пользовательские эмодзи и стикеры",
     "hideRedactedMessages": "Скрыть редактированные сообщения",
@@ -2770,8 +2768,6 @@
     "doubleTapToReact": "Двойное касание для реакции",
     "doubleTapToReactDescription": "Для реакции на сообщение дважды коснитесь его, вместо того чтобы выделять текст",
     "doubleTapReaction": "Двойное касание реакции",
-    "shareCrashReports": "Делиться отчетами о сбоях",
-    "shareCrashReportsDescription": "Автоматически отправлять отчеты о сбоях разработчикам?",
     "countActiveCallMembers": "{count} активные участники звонка",
     "@countActiveCallMembers": {
         "placeholders": {

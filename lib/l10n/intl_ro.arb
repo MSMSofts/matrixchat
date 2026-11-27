@@ -1577,7 +1577,6 @@
     "@sendAsText": {
         "type": "String"
     },
-    "reportErrorDescription": "Ceva a eșuat. Vă rugăm să încercați din nou mai tărziu. Dacă doriți, puteți să reportați problema la dezvoltatori.",
     "openLinkInBrowser": "Deschideți linkul în browser",
     "send": "Trimiteți",
     "@send": {
