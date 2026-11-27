@@ -1873,7 +1873,6 @@
     "encryptThisChat": "Salaa tämä keskustelu",
     "noBackupWarning": "Varoitus! Ilman avainvarmuuskopion käyttöönottoa menetät pääsyn salattuihin viesteihisi. Suosittelemme ehdottomasti avainvarmuuskopion käyttöönottoa ennen uloskirjautumista.",
     "fileIsTooBigForServer": "Ei voi lähettää! Palvelin tukee liitetiedostoja vain enintään {max}.",
-    "reportErrorDescription": "😭 Voi ei. Jokin meni pieleen. Halutessasi voit ilmoittaa ongelman kehittäjille.",
     "wasDirectChatDisplayName": "Tyhjä keskustelu (oli {oldDisplayName})",
     "@wasDirectChatDisplayName": {
         "type": "String",
@@ -2192,7 +2191,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Tietokannan salausta ei tueta tällä alustalla",
     "thereAreCountUsersBlocked": "Tällä hetkellä {count} käyttäjää on estetty.",
     "@thereAreCountUsersBlocked": {
         "type": "String",

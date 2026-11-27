@@ -2222,7 +2222,6 @@
         }
     },
     "commandHint_unignore": "No ignorar la ID de matrix dada",
-    "noDatabaseEncryption": "En esta plataforma no hay cifrado de base de datos",
     "startedKeyVerification": "{sender} ha comenzado verificación de clave",
     "@startedKeyVerification": {
         "type": "String",
@@ -2301,7 +2300,6 @@
             }
         }
     },
-    "reportErrorDescription": "😭 Oh, no. Algo ha salido mal. Si quieres, puedes informar de este fallo a los desarrolladores.",
     "hasKnocked": "🚪 {user} ha avisado",
     "@hasKnocked": {
         "placeholders": {

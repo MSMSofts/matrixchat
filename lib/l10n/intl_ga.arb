@@ -1770,7 +1770,6 @@
     "formattedMessagesDescription": "Taispeáin ábhar saibhir teachtaireachta cosúil le téacs trom ag baint úsáide as marcáil síos.",
     "verifyOtherUser": "🔐 Fíoraigh úsáideoir eile",
     "jump": "Léim",
-    "reportErrorDescription": "😭 Ó, a mhac go deo. Chuaigh rud éigin mícheart. Más mian leat, is féidir leat an fabht seo a thuairisciú do na forbróirí.",
     "invalidInput": "Ionchur neamhbhailí!",
     "kickUserDescription": "Ciceáiltear an t-úsáideoir as an gcomhrá ach níl cosc air. I gcomhráite poiblí, is féidir leis an úsáideoir teacht ar ais ag am ar bith.",
     "commandHint_sendraw": "Seol json amh",
@@ -2214,7 +2213,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Ní thacaítear le criptiú bunachar sonraí ar an ardán seo",
     "thereAreCountUsersBlocked": "Faoi láthair tá bac curtha ar úsáideoirí {count}.",
     "@thereAreCountUsersBlocked": {
         "type": "String",
@@ -2772,8 +2770,6 @@
         }
     },
     "compressingVideo": "Ag comhbhrú físeáin...",
-    "shareCrashReports": "Comhroinn tuairiscí tuairteála",
-    "shareCrashReportsDescription": "An bhfuil tú ag iarraidh tuairiscí tuairteála a roinnt go huathoibríoch leis na forbróirí?",
     "countActiveCallMembers": "{count} baill ghníomhacha glaonna",
     "@countActiveCallMembers": {
         "placeholders": {
