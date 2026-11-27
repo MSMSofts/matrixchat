@@ -16,7 +16,6 @@ class SecurityStorageException implements Exception {
 abstract final class SecurityPolicy {
   static const allowedKeySharing = {
     ShareKeysWith.verifiedOnly,
-    ShareKeysWith.directlyVerifiedOnly,
     ShareKeysWith.crossVerified,
   };
 

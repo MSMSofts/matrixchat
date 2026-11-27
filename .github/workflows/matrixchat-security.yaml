@@ -22,5 +22,8 @@ jobs:
           flutter-version-file: .fvmrc
       - uses: dtolnay/rust-toolchain@stable
       - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart
+      - name: Static analysis
+        run: flutter analyze
+      - name: Security unit tests
+        if: ${{ !cancelled() }}
+        run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart

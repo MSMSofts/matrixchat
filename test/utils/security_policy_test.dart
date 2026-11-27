@@ -19,7 +19,7 @@ void main() {
     }
     expect(
       SecurityPolicy.keySharing('directlyVerifiedOnly'),
-      ShareKeysWith.directlyVerifiedOnly,
+      ShareKeysWith.verifiedOnly,
     );
   });
 

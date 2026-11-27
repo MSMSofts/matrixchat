@@ -50,7 +50,7 @@ class _LockScreenState extends State<LockScreen> {
       if (!mounted) return;
       setState(() {
         _inputBlocked = false;
-        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300).toInt();
+        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300);
         _errorText = null;
       });
     });
@@ -90,7 +90,7 @@ class _LockScreenState extends State<LockScreen> {
       if (!mounted) return;
       setState(() {
         _inputBlocked = false;
-        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300).toInt();
+        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300);
         _errorText = null;
       });
     });
