@@ -43,3 +43,6 @@ References for reviewers: [Matrix specification](https://spec.matrix.org/), [OWA
 ## Status
 
 CI results must be reviewed on the current commit. Hardware-backed wrapping of existing keys, browser at-rest data protection, native code signing, independent cross-machine reproducibility, full SDK/native transport coverage and independent penetration testing remain open unless separately evidenced.
+
+## Additional release checks
+Verify that backup files and package manifests are not served by the web deployment. Confirm the application manifest is not cached persistently. Terminate TLS at the trusted reverse proxy and configure HSTS there only after confirming HTTPS deployment. Verify provenance with `gh attestation verify matrixchat-web.tar.gz --repo MSMSofts/matrixchat` and compare SHA256SUMS from the reviewed candidate. These checks do not replace native signing or independent reproducibility testing.
