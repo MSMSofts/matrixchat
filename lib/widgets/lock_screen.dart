@@ -28,6 +28,7 @@ class _LockScreenState extends State<LockScreen> {
     if (_inputBlocked || !mounted) return;
     setState(() {
       _errorText = null;
+      _inputBlocked = true;
     });
 
     final success = await AppLock.of(context).unlockWithBiometrics();

@@ -31,6 +31,7 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   bool _isLocked = false;
   bool _useBiometrics = false;
   bool _triedAutoBiometrics = false;
+  bool _biometricInProgress = false;
   bool _paused = false;
   bool get isActive =>
       _pincode != null &&
@@ -71,6 +72,9 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   }
 
   bool get isLocked => _isLocked;
+  bool get hasPincode => _pincode != null;
+
+  bool verifyCurrentPin(String pin) => _pincode != null && pin == _pincode;
 
   Future<void> changeUseBiometrics(bool useBiometrics) async {
     await const FlutterSecureStorage().write(
@@ -94,6 +98,8 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   }
 
   Future<bool> unlockWithBiometrics() async {
+    if (_biometricInProgress || !useBiometrics) return false;
+    _biometricInProgress = true;
     _triedAutoBiometrics = true;
     final localAuth = LocalAuthentication();
     bool unlocked;
@@ -105,6 +111,8 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
       );
     } catch (_) {
       return false;
+    } finally {
+      _biometricInProgress = false;
     }
     if (!mounted) return false;
     if (unlocked) {
@@ -117,7 +125,7 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   }
 
   bool unlock(String pincode) {
-    final isCorrect = _pincode != null && pincode == _pincode;
+    final isCorrect = verifyCurrentPin(pincode);
     if (isCorrect) {
       setState(() {
         _isLocked = false;

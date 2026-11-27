@@ -26,7 +26,7 @@ class SettingsSecurity extends StatefulWidget {
 
 class SettingsSecurityController extends State<SettingsSecurity> {
   Future<void> toggleBiometrics() async {
-    AppLock.of(context).showLockScreen();
+    if (!await _confirmCurrentPin() || !mounted) return;
 
     final oldState = AppLock.of(context).useBiometrics;
     final actionStr = oldState
@@ -53,11 +53,11 @@ class SettingsSecurityController extends State<SettingsSecurity> {
       if (!mounted) return;
     }
     await AppLock.of(context).changeUseBiometrics(!oldState);
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<void> disableAppLockAction() async {
-    AppLock.of(context).showLockScreen();
+    if (!await _confirmCurrentPin() || !mounted) return;
     final consent = await showOkCancelAlertDialog(
       context: context,
       title: L10n.of(context).disableAppLock,
@@ -74,12 +74,8 @@ class SettingsSecurityController extends State<SettingsSecurity> {
   }
 
   Future<void> setAppLockAction() async {
-    await AppLock.of(context).changeUseBiometrics(false);
-    if (!mounted) return;
+    if (!await _confirmCurrentPin() || !mounted) return;
     final l10n = L10n.of(context);
-    if (AppLock.of(context).isActive) {
-      AppLock.of(context).showLockScreen();
-    }
     final newLock = await showTextInputDialog(
       useRootNavigator: false,
       context: context,
@@ -87,9 +83,7 @@ class SettingsSecurityController extends State<SettingsSecurity> {
       message: l10n.pleaseEnter6Digits,
       cancelLabel: l10n.cancel,
       validator: (text) {
-        if (RegExp(r'^\d{6}
-          return null;
-        }
+        if (RegExp(r'^\d{6}$').hasMatch(text)) return null;
         return l10n.pleaseEnter6Digits;
       },
       keyboardType: TextInputType.number,
@@ -98,11 +92,33 @@ class SettingsSecurityController extends State<SettingsSecurity> {
       minLines: 1,
       maxLength: 6,
     );
-    if (newLock != null) {
-      if (!mounted) return;
-      await AppLock.of(context).changePincode(newLock);
-      setState(() {});
-    }
+    if (newLock == null || !mounted) return;
+    final appLock = AppLock.of(context);
+    await appLock.changePincode(newLock);
+    await appLock.changeUseBiometrics(false);
+    if (mounted) setState(() {});
+  }
+
+  /// Confirm the existing PIN before changing security-sensitive settings.
+  Future<bool> _confirmCurrentPin() async {
+    final lock = AppLock.of(context);
+    if (!lock.hasPincode) return true;
+    final l10n = L10n.of(context);
+    final pin = await showTextInputDialog(
+      useRootNavigator: false,
+      context: context,
+      title: l10n.pleaseEnterYourPin,
+      cancelLabel: l10n.cancel,
+      keyboardType: TextInputType.number,
+      obscureText: true,
+      maxLines: 1,
+      minLines: 1,
+      maxLength: 6,
+    );
+    if (pin == null || !mounted || lock.isLocked) return false;
+    if (lock.verifyCurrentPin(pin)) return true;
+    lock.showLockScreen();
+    return false;
   }
 
   Future<void> deleteAccountAction() async {

@@ -43,3 +43,5 @@ Preserve compatibility with Matrix and upstream license notices. Do not introduc
 - Private desktop/browser notifications and native call presentation omit names and avatars; platform history and call dialogs require verification. Notification payloads still contain local routing identifiers.
 - App lock removes automatic PIN deletion on logged-out startup, hides underlying UI while locked, checks lifecycle and mounted state, and caps UI retry delay. This is UI protection, not hardware-backed secret storage or restart-resistant brute-force prevention.
 - Added six transport tests and a read-only GitHub Actions workflow. CI and platform verification are still required.
+
+- Existing PIN confirmation is required before changing app-lock settings. Biometric requests are serialized while in progress; the UI retry delay is not persistent across restarts.
