@@ -1981,7 +1981,6 @@
     "readUpToHere": "Bu yerga qadar o‘qish",
     "jump": "Sakrash",
     "openLinkInBrowser": "Havolani brauzerda ochish",
-    "reportErrorDescription": "😭 Voy yo‘q. Nimadir xato ketdi. Agar xohlasangiz, bu xato haqida dasturchilarga xabar berishingiz mumkin.",
     "report": "hisobot",
     "setColorTheme": "Rang mavzusini sozlash:",
     "invite": "Taklif qilish",
@@ -2146,7 +2145,6 @@
     "discover": "Kashf etish",
     "commandHint_ignore": "Berilgan matriks ID e’tiborga olinmasin",
     "commandHint_unignore": "Berilgan matriks IDni e’tiborsiz qoldirish",
-    "noDatabaseEncryption": "Bu platformada ma’lumotlar bazasini shifrlash ishlamaydi",
     "thereAreCountUsersBlocked": "Hozirda {count} ta foydalanuvchi bloklangan.",
     "@thereAreCountUsersBlocked": {
         "type": "String",

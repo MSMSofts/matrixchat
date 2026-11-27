@@ -2025,7 +2025,6 @@
     },
     "jumpToLastReadMessage": "跳至最後讀取的訊息",
     "openLinkInBrowser": "在瀏覽器中開啟連結",
-    "reportErrorDescription": "😭 哦不。出了些問題。如果您願意，可以將此錯誤報告給開發者。",
     "readUpToHere": "讀到這裡",
     "report": "報告",
     "pleaseEnterANumber": "請輸入大於 0 的數字",
@@ -2117,7 +2116,6 @@
         "space": {}
     },
     "markAsUnread": "標示為未讀",
-    "noDatabaseEncryption": "此平台不支援資料庫加密",
     "openGallery": "開啟畫廊",
     "markAsRead": "標示為已讀",
     "reportUser": "舉報使用者",
