@@ -806,9 +806,20 @@ class ChatController extends State<ChatPageWithRoom>
   });
 
   Future<void> send() async {
-    final proceed = await showTrustUserInRoomDialog(context, room);
-    if (!mounted || !proceed) return;
-    if (sendController.text.trim().isEmpty) return;
+    final targetRoom = room;
+    final targetClient = sendingClient;
+    final originalText = sendController.text;
+    final originalRevision = _draftRevision;
+    if (originalText.trim().isEmpty) return;
+    final proceed = await showTrustUserInRoomDialog(context, targetRoom);
+    if (!mounted ||
+        !proceed ||
+        targetClient != sendingClient ||
+        targetRoom.id != room.id ||
+        originalText != sendController.text ||
+        originalRevision != _draftRevision) {
+      return;
+    }
     var parseCommands = true;
 
     final commandMatch = RegExp(r'^\/(\w+)').firstMatch(sendController.text);
@@ -822,7 +833,14 @@ class ChatController extends State<ChatPageWithRoom>
         okLabel: l10n.sendAsText,
         cancelLabel: l10n.cancel,
       );
-      if (dialogResult != OkCancelResult.ok || !mounted) return;
+      if (dialogResult != OkCancelResult.ok ||
+          !mounted ||
+          targetClient != sendingClient ||
+          targetRoom.id != room.id ||
+          originalText != sendController.text ||
+          originalRevision != _draftRevision) {
+        return;
+      }
       parseCommands = false;
     }
 
@@ -847,7 +865,12 @@ class ChatController extends State<ChatPageWithRoom>
     final draftVault = _draftVault;
     final revision = ++_draftRevision;
     final wasEditing = editEvent != null || activeThreadId != null;
-    final sendFuture = room.sendTextEvent(
+    final savedDraft = !wasEditing &&
+            draftVault != null &&
+            AppSettings.persistEncryptedDrafts.value
+        ? _saveDraft(draftVault, sentText)
+        : Future<void>.value();
+    final sendFuture = targetRoom.sendTextEvent(
       sentText,
       inReplyTo: replyEvent,
       editEventId: editEvent?.eventId,
@@ -857,6 +880,7 @@ class ChatController extends State<ChatPageWithRoom>
     unawaited(() async {
       try {
         final eventId = await sendFuture;
+        await savedDraft;
         if (eventId != null &&
             !wasEditing &&
             draftVault != null &&
