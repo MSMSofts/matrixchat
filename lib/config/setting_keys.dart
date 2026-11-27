@@ -46,6 +46,7 @@ enum AppSettings<T> {
   requireEncryptedRooms<bool>('matrixchat.require_encrypted_rooms', false),
   requireVerifiedIdentities<bool>('matrixchat.require_verified_identities', false),
   persistPlaintextDrafts<bool>('matrixchat.persist_plaintext_drafts', false),
+  persistMediaCache<bool>('matrixchat.persist_media_cache', false),
   swipeRightToLeftToReply<bool>('chat.fluffy.swipeRightToLeftToReply', true),
   sendOnEnter<bool>('chat.fluffy.send_on_enter', false),
   displayNavigationRail<bool>('chat.fluffy.display_navigation_rail', false),

@@ -116,6 +116,15 @@ class SettingsSecurityView extends StatelessWidget {
                         : 'When off, new drafts remain in the editor only.',
                     setting: AppSettings.persistPlaintextDrafts,
                   ),
+                  SettingsSwitchListTile.adaptive(
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'کش دائمی رسانه'
+                        : 'Persistent media cache',
+                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'خاموش: ذخیره معمول رسانه روی دیسک محدود می‌شود. برای تغییر کامل برنامه را دوباره اجرا کنید.'
+                        : 'Off limits ordinary media caching on disk. Restart to apply all changes.',
+                    setting: AppSettings.persistMediaCache,
+                  ),
                   ListTile(
                     trailing: const Icon(Icons.chevron_right_outlined),
                     title: Text(L10n.of(context).blockedUsers),

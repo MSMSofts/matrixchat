@@ -5,6 +5,7 @@
 
 import 'dart:io';
 
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:flutter/foundation.dart';
@@ -58,7 +59,10 @@ Future<Directory?> getFileStorageLocation() async {
 Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
   if (kIsWeb) {
     html.window.navigator.storage?.persist();
-    return await MatrixSdkDatabase.init(clientName);
+    return await MatrixSdkDatabase.init(
+      clientName,
+      maxFileSize: AppSettings.persistMediaCache.value ? 1000 * 1000 * 10 : 0,
+    );
   }
 
   final factory = createDatabaseFactoryFfi();
@@ -76,7 +80,10 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
       );
     },
   );
-  final fileStorageLocation = await getFileStorageLocation();
+  final cacheEnabled = AppSettings.persistMediaCache.value;
+  final fileStorageLocation = cacheEnabled
+      ? await getFileStorageLocation()
+      : null;
   final helper = SQfLiteEncryptionHelper(
     factory: factory,
     path: path,
@@ -107,7 +114,7 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
   return await MatrixSdkDatabase.init(
     clientName,
     database: database,
-    maxFileSize: 1000 * 1000 * 10,
+    maxFileSize: cacheEnabled ? 1000 * 1000 * 10 : 0,
     fileStorageLocation: fileStorageLocation?.uri,
     deleteFilesAfterDuration: const Duration(days: 30),
     secureStorage: (

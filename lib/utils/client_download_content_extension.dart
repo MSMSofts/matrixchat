@@ -7,6 +7,7 @@ import 'dart:math' show min;
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:matrix/matrix.dart';
 
 extension ClientDownloadContentExtension on Client {
@@ -31,8 +32,10 @@ extension ClientDownloadContentExtension on Client {
           )
         : mxc;
 
-    final cachedData = await database.getFile(cacheKey);
-    if (cachedData != null) return cachedData;
+    if (AppSettings.persistMediaCache.value) {
+      final cachedData = await database.getFile(cacheKey);
+      if (cachedData != null) return cachedData;
+    }
 
     final httpUri = isThumbnail
         ? await mxc.getThumbnailUri(
@@ -62,7 +65,9 @@ extension ClientDownloadContentExtension on Client {
       );
     }
 
-    await database.storeFile(cacheKey, imageData, 0);
+    if (AppSettings.persistMediaCache.value) {
+      await database.storeFile(cacheKey, imageData, 0);
+    }
 
     return imageData;
   }
@@ -105,5 +110,9 @@ Future<Uint8List> _convertToCircularImage(
   final circularImage = await picture.toImage(size, size);
 
   final byteData = await circularImage.toByteData(format: ImageByteFormat.png);
+  originalImage.dispose();
+  codec.dispose();
+  picture.dispose();
+  circularImage.dispose();
   return byteData!.buffer.asUint8List();
 }

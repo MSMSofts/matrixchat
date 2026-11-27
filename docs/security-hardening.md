@@ -45,3 +45,10 @@ Preserve compatibility with Matrix and upstream license notices. Do not introduc
 - Added six transport tests and a read-only GitHub Actions workflow. CI and platform verification are still required.
 
 - Existing PIN confirmation is required before changing app-lock settings. Biometric requests are serialized while in progress; the UI retry delay is not persistent across restarts.
+
+## R3 implementation candidate — local media protection
+- Fixed the duplicated settings controller tail reported by CI, and analyzer findings in the R2 logs.
+- Persistent media cache is opt-in. The SDK is initialized without a file storage directory and with a zero size limit by default; direct MXC cache reads/writes and iOS notification avatar files are also gated. SDK pending-upload data and other platform/plugin cache paths require integration tests. Existing disk cache files are not erased automatically.
+- Event images are no longer retained in the shared application image map. Lock clears global image caches on a best-effort basis; live widget buffers, native media players, and GPU memory are not guaranteed erased.
+- Android main activity sets FLAG_SECURE and disallows cleartext traffic in the main manifest. Screenshots, screen sharing and some debugging workflows may be affected. Other activities and platforms need separate validation.
+- Hardware-backed vault, encrypted persistent media cache, restart-resistant PIN limits, secure draft persistence, and full native/RTC security testing are still outstanding.

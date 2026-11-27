@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/widgets/lock_screen.dart';
+import 'package:fluffychat/widgets/mxc_image.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:material_ui/material_ui.dart';
@@ -134,9 +135,14 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
     return isCorrect;
   }
 
-  void showLockScreen() => setState(() {
-    _isLocked = true;
-  });
+  void showLockScreen() {
+    MxcImage.clearAllCaches();
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    setState(() {
+      _isLocked = true;
+    });
+  }
 
   Future<T> pauseWhile<T>(Future<T> future) async {
     _paused = true;

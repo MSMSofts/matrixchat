@@ -33,5 +33,6 @@
   "checkForUpdates": false,
   "requireEncryptedRooms": false,
   "requireVerifiedIdentities": false,
-  "persistPlaintextDrafts": false
+  "persistPlaintextDrafts": false,
+  "persistMediaCache": false
 }
