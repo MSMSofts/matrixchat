@@ -7,10 +7,10 @@ import 'dart:io';
 
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/security/media_vault.dart';
+import 'package:fluffychat/security/protected_storage.dart';
 import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:matrix/matrix.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -73,12 +73,32 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
   final cipher = await getDatabaseCipher(
     hasExistingData: () async {
       if (await File(path).exists()) return true;
-      // The key is shared by accounts.
-      final directory = Directory(dirname(path));
-      if (!await directory.exists()) return false;
-      return directory.list().any(
-        (entry) => entry is File && entry.path.endsWith('.sqlite'),
-      );
+      // A shared key must not be recreated while ANY account data remains,
+      // including a legacy directory or a surviving SQLite sidecar.
+      final directories = <String>{
+        dirname(path),
+        await _getDatabaseDirectory(),
+        if (PlatformInfos.isDesktop)
+          (await getApplicationSupportDirectory()).path
+        else if (PlatformInfos.isIOS)
+          (await getLibraryDirectory()).path
+        else
+          await getDatabasesPath(),
+      };
+      for (final directoryPath in directories) {
+        final directory = Directory(directoryPath);
+        if (!await directory.exists()) continue;
+        final found = await directory.list().any((entry) {
+          if (entry is! File) return false;
+          final name = basename(entry.path);
+          return name.endsWith('.sqlite') ||
+              name.endsWith('.sqlite-wal') ||
+              name.endsWith('.sqlite-shm') ||
+              name.endsWith('.sqlite-journal');
+        });
+        if (found) return true;
+      }
+      return false;
     },
   );
   final cacheEnabled = AppSettings.persistMediaCache.value;
@@ -107,7 +127,7 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
     ),
   );
 
-  final secureStorage = FlutterSecureStorage(iOptions: iosOptions);
+  final secureStorage = ProtectedStorage.shared;
 
   final vault = MediaVault(
     database,

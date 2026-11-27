@@ -9,13 +9,13 @@ import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:fluffychat/config/app_config.dart';
+import 'package:fluffychat/security/protected_storage.dart';
 import 'package:fluffychat/utils/client_manager.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/notification_background_handler.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/start_push_foreground_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_vodozemac/flutter_vodozemac.dart' as vod;
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:material_ui/material_ui.dart';
@@ -143,11 +143,11 @@ Future<void> startGui(List<Client> clients, SharedPreferences store) async {
   var useBiometrics = false;
   if (PlatformInfos.supportsAppLock) {
     try {
-      pin = await const FlutterSecureStorage().read(
+      pin = await ProtectedStorage.local.read(
         key: 'chat.fluffy.app_lock',
       );
       useBiometrics =
-          (await const FlutterSecureStorage().read(
+          (await ProtectedStorage.local.read(
             key: 'chat.fluffy.use_biometrics',
           )) ==
           'true';

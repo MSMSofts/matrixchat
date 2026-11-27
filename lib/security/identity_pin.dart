@@ -3,7 +3,7 @@
 
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:fluffychat/security/protected_storage.dart';
 import 'package:synchronized/synchronized.dart';
 
 enum IdentityPinResult { matched, firstPin, changed, unavailable }
@@ -16,7 +16,7 @@ class IdentityPin {
 
   IdentityPin({required this.read, required this.write});
 
-  static final _storage = FlutterSecureStorage();
+  static final _storage = ProtectedStorage.local;
   static final instance = IdentityPin(
     read: (key) => _storage.read(key: key),
     write: (key, value) => _storage.write(key: key, value: value),

@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/security/pin_attempt_guard.dart';
+import 'package:fluffychat/security/protected_storage.dart';
 import 'package:fluffychat/widgets/lock_screen.dart';
 import 'package:fluffychat/widgets/mxc_image.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +30,7 @@ class AppLockWidget extends StatefulWidget {
 
 class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   static const _attemptKey = 'matrixchat.pin_attempt_state';
-  static const _storage = FlutterSecureStorage();
+  static const _storage = ProtectedStorage.local;
   final _pinAttempts = PinAttemptGuard(
     read: () => _storage.read(key: _attemptKey),
     write: (value) => _storage.write(key: _attemptKey, value: value),
@@ -90,7 +90,7 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
       _pinAttempts.verify(() => _pincode != null && pin == _pincode);
 
   Future<void> changeUseBiometrics(bool useBiometrics) async {
-    await const FlutterSecureStorage().write(
+    await ProtectedStorage.local.write(
       key: 'chat.fluffy.use_biometrics',
       value: useBiometrics.toString(),
     );
@@ -99,7 +99,7 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   }
 
   Future<void> changePincode(String? pincode) async {
-    await const FlutterSecureStorage().write(
+    await ProtectedStorage.local.write(
       key: 'chat.fluffy.app_lock',
       value: pincode,
     );
