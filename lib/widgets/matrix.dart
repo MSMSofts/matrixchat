@@ -61,6 +61,7 @@ class Matrix extends StatefulWidget {
 }
 
 class MatrixState extends State<Matrix> {
+  List<Client> get securityPolicyClients => List.unmodifiable(widget.clients);
   int _activeClient = -1;
   String? activeBundle;
 

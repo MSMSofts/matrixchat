@@ -179,7 +179,7 @@ class SettingsSecurityController extends State<SettingsSecurity> {
     }
     await AppSettings.shareKeysWith.setItem(shareKeysWith.name);
     if (!mounted) return;
-    for (final client in Matrix.of(context).widget.clients) {
+    for (final client in Matrix.of(context).securityPolicyClients) {
       client.shareKeysWith = shareKeysWith;
     }
     setState(() {});
