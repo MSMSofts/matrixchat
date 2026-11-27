@@ -9,6 +9,7 @@ import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/security/security_presets.dart';
+import 'package:fluffychat/security/security_status_panel.dart';
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
@@ -73,6 +74,7 @@ class SettingsSecurityView extends StatelessWidget {
                           : 'Apply a bundle of security settings.',
                     ),
                   ),
+                  SecurityStatusPanel(client: client),
                   for (final preset in SecurityPreset.values)
                     ListTile(
                       title: Text(switch (preset) {
