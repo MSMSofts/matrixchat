@@ -34,5 +34,6 @@
   "requireEncryptedRooms": false,
   "requireVerifiedIdentities": false,
   "persistPlaintextDrafts": false,
-  "persistMediaCache": false
+  "persistMediaCache": false,
+  "persistEncryptedDrafts": true
 }

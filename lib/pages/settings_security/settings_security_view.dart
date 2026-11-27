@@ -144,16 +144,17 @@ class SettingsSecurityView extends StatelessWidget {
                         : 'Require verified identities in guarded send flows.',
                     setting: AppSettings.requireVerifiedIdentities,
                   ),
-                  SettingsSwitchListTile.adaptive(
-                    title: Localizations.localeOf(context).languageCode == 'fa'
-                        ? 'ذخیره پیش‌نویس بدون رمزنگاری'
-                        : 'Persist unencrypted drafts',
-                    subtitle:
-                        Localizations.localeOf(context).languageCode == 'fa'
-                        ? 'در حالت خاموش، پیش‌نویس فقط در ویرایشگر باقی می‌ماند.'
-                        : 'When off, new drafts remain in the editor only.',
-                    setting: AppSettings.persistPlaintextDrafts,
-                  ),
+                  if (!PlatformInfos.isWeb)
+                    SettingsSwitchListTile.adaptive(
+                      title: Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'پیش‌نویس رمزنگاری‌شده'
+                          : 'Encrypted drafts',
+                      subtitle:
+                          Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'ذخیره در دیتابیس امن حساب؛ خاموش کردن، نسخه‌های قبلی را حذف نمی‌کند.'
+                          : 'Save in the account vault. Turning off does not erase older drafts.',
+                      setting: AppSettings.persistEncryptedDrafts,
+                    ),
                   SettingsSwitchListTile.adaptive(
                     title: Localizations.localeOf(context).languageCode == 'fa'
                         ? 'کش دائمی رسانه'

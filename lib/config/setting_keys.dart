@@ -49,6 +49,7 @@ enum AppSettings<T> {
     false,
   ),
   persistPlaintextDrafts<bool>('matrixchat.persist_plaintext_drafts', false),
+  persistEncryptedDrafts<bool>('matrixchat.persist_encrypted_drafts', true),
   persistMediaCache<bool>('matrixchat.persist_media_cache', false),
   swipeRightToLeftToReply<bool>('chat.fluffy.swipeRightToLeftToReply', true),
   sendOnEnter<bool>('chat.fluffy.send_on_enter', false),

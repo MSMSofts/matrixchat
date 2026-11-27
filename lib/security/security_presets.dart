@@ -15,6 +15,7 @@ enum SecurityPreset {
   Map<AppSettings<bool>, bool> get settings => {
     AppSettings.privateNotifications: true,
     AppSettings.persistPlaintextDrafts: false,
+    AppSettings.persistEncryptedDrafts: !requiresVerification,
     AppSettings.persistMediaCache: false,
     AppSettings.sendTypingNotifications: false,
     AppSettings.sendPublicReadReceipts: false,

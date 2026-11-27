@@ -19,6 +19,8 @@ import 'package:fluffychat/pages/chat/start_poll_bottom_sheet.dart';
 import 'package:fluffychat/pages/chat/trust_user_key_dialog.dart';
 import 'package:fluffychat/pages/chat/utils/web_file_to_x_file.dart';
 import 'package:fluffychat/pages/chat_details/chat_details.dart';
+import 'package:fluffychat/security/draft_vault.dart';
+import 'package:fluffychat/security/media_vault.dart';
 import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/file_selector.dart';
@@ -322,15 +324,54 @@ class ChatController extends State<ChatPageWithRoom>
     }
   }
 
-  void _loadDraft() {
+  int _draftRevision = 0;
+
+  DraftVault? get _draftVault {
+    final database = sendingClient.database;
+    return database is VaultMatrixDatabase ? database.drafts : null;
+  }
+
+  Future<void> _loadDraft() async {
+    if (!AppSettings.persistEncryptedDrafts.value) return;
+    final vault = _draftVault;
+    if (vault == null) return;
+    final revision = _draftRevision;
+    final account = sendingClient;
     final prefs = Matrix.of(context).store;
-    final draft = prefs.getString('draft_$roomId');
-    if (draft != null && draft.isNotEmpty) {
-      sendController.text = draft;
+    final singleAccount = Matrix.of(context).securityPolicyClients.length == 1;
+    try {
+      final draft = await vault.read(roomId);
+      if (!mounted || revision != _draftRevision || account != sendingClient) {
+        return;
+      }
+      if (sendController.text.isNotEmpty) return;
+      // Old drafts were not account-scoped. Migrate only when unambiguous,
+      // and only after the new copy is verified.
+      final legacy = singleAccount ? prefs.getString('draft_$roomId') : null;
+      final text = draft ?? legacy;
+      if (text == null || text.isEmpty) return;
+      setState(() {
+        sendController.text = text;
+        _inputTextIsEmpty = false;
+      });
+      if (draft == null && legacy != null) {
+        await vault.write(roomId, legacy);
+        if (await vault.read(roomId) == legacy &&
+            prefs.getString('draft_$roomId') == legacy) {
+          await prefs.remove('draft_$roomId');
+        }
+      }
+    } catch (_) {
+      Logs().w('Encrypted draft could not be loaded.');
     }
-    if (!AppSettings.persistPlaintextDrafts.value) {
-      // Preserve the text in the current editor, but stop retaining it on disk.
-      unawaited(prefs.remove('draft_$roomId'));
+  }
+
+  Future<void> _saveDraft(DraftVault vault, String text) async {
+    if (!AppSettings.persistEncryptedDrafts.value) return;
+    try {
+      await vault.write(roomId, text);
+    } catch (_) {
+      Logs().w('Encrypted draft could not be saved.');
     }
   }
 
@@ -441,8 +482,9 @@ class ChatController extends State<ChatPageWithRoom>
     scrollController.addListener(_updateScrollController);
     inputFocus.addListener(_inputFocusListener);
 
-    _loadDraft();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(_loadDraft());
       _shareItems();
       _checkMatrixRtcCallSupport();
       if (widget.action == 'call') {
@@ -714,6 +756,11 @@ class ChatController extends State<ChatPageWithRoom>
   void dispose() {
     timeline?.cancelSubscriptions();
     timeline = null;
+    if (_storeInputTimeoutTimer?.isActive == true &&
+        editEvent == null && activeThreadId == null) {
+      final vault = _draftVault;
+      if (vault != null) unawaited(_saveDraft(vault, sendController.text));
+    }
     _storeInputTimeoutTimer?.cancel();
     typingCoolDown?.cancel();
     typingTimeout?.cancel();
@@ -731,6 +778,8 @@ class ChatController extends State<ChatPageWithRoom>
   TextEditingController sendController = TextEditingController();
 
   void setSendingClient(Client c) {
+    _draftRevision++;
+    _storeInputTimeoutTimer?.cancel();
     // first cancel typing with the old sending client
     if (currentlyTyping) {
       // no need to have the setting typing to false be blocking
@@ -760,9 +809,6 @@ class ChatController extends State<ChatPageWithRoom>
     final proceed = await showTrustUserInRoomDialog(context, room);
     if (!mounted || !proceed) return;
     if (sendController.text.trim().isEmpty) return;
-    _storeInputTimeoutTimer?.cancel();
-    final prefs = Matrix.of(context).store;
-    prefs.remove('draft_$roomId');
     var parseCommands = true;
 
     final commandMatch = RegExp(r'^\/(\w+)').firstMatch(sendController.text);
@@ -796,14 +842,31 @@ class ChatController extends State<ChatPageWithRoom>
         AppSettings.requireVerifiedIdentities.value) {
       parseCommands = false;
     }
-    // ignore: unawaited_futures
-    room.sendTextEvent(
-      sendController.text,
+    _storeInputTimeoutTimer?.cancel();
+    final sentText = sendController.text;
+    final draftVault = _draftVault;
+    final revision = ++_draftRevision;
+    final wasEditing = editEvent != null || activeThreadId != null;
+    final sendFuture = room.sendTextEvent(
+      sentText,
       inReplyTo: replyEvent,
       editEventId: editEvent?.eventId,
       parseCommands: parseCommands,
       threadRootEventId: activeThreadId,
     );
+    unawaited(() async {
+      try {
+        final eventId = await sendFuture;
+        if (eventId != null &&
+            !wasEditing &&
+            draftVault != null &&
+            revision == _draftRevision) {
+          await draftVault.deleteIfMatches(roomId, sentText);
+        }
+      } catch (_) {
+        Logs().w('Message send failed; saved draft retained.');
+      }
+    }());
     sendController.value = TextEditingValue(
       text: pendingText,
       selection: const TextSelection.collapsed(offset: 0),
@@ -1617,14 +1680,8 @@ class ChatController extends State<ChatPageWithRoom>
       });
     }
 
+    final revision = ++_draftRevision;
     _storeInputTimeoutTimer?.cancel();
-    if (AppSettings.persistPlaintextDrafts.value) {
-      _storeInputTimeoutTimer = Timer(_storeInputTimeout, () async {
-        if (!mounted || !AppSettings.persistPlaintextDrafts.value) return;
-        final prefs = Matrix.of(context).store;
-        await prefs.setString('draft_$roomId', text);
-      });
-    }
     if (text.endsWith(' ') && Matrix.of(context).hasComplexBundles) {
       final clients = currentRoomBundle;
       for (final client in clients) {
@@ -1638,6 +1695,16 @@ class ChatController extends State<ChatPageWithRoom>
           return;
         }
       }
+    }
+    final vault = _draftVault;
+    if (vault != null &&
+        AppSettings.persistEncryptedDrafts.value &&
+        editEvent == null &&
+        activeThreadId == null) {
+      _storeInputTimeoutTimer = Timer(_storeInputTimeout, () {
+        if (!mounted || revision != _draftRevision) return;
+        unawaited(_saveDraft(vault, text));
+      });
     }
     if (AppSettings.sendTypingNotifications.value) {
       typingCoolDown?.cancel();

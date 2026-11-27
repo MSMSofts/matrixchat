@@ -3,6 +3,7 @@
 
 import 'dart:typed_data';
 
+import 'package:fluffychat/security/draft_vault.dart';
 import 'package:matrix/matrix.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -97,6 +98,7 @@ class MediaVault {
 /// media persistence to its plaintext filesystem implementation on native.
 class VaultMatrixDatabase extends MatrixSdkDatabase {
   final MediaVault vault;
+  late final DraftVault drafts = DraftVault(vault.database);
 
   VaultMatrixDatabase(
     super.name, {
@@ -118,6 +120,7 @@ class VaultMatrixDatabase extends MatrixSdkDatabase {
   Future<void> open() async {
     await super.open();
     await vault.initialize();
+    await drafts.initialize();
   }
 
   @override
@@ -142,6 +145,7 @@ class VaultMatrixDatabase extends MatrixSdkDatabase {
 
   @override
   Future<void> clear() async {
+    await drafts.clear();
     await vault.clear();
     await super.clear();
   }
