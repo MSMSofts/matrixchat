@@ -14,7 +14,9 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   test('native SQLCipher protects vault data and rejects wrong keys', () async {
-    final directory = await Directory.systemTemp.createTemp('matrixchat-vault-');
+    final directory = await Directory.systemTemp.createTemp(
+      'matrixchat-vault-',
+    );
     addTearDown(() => directory.delete(recursive: true));
     final path = p.join(directory.path, 'vault.sqlite');
     final factory = createDatabaseFactoryFfi();

@@ -15,10 +15,13 @@ final _keyLock = Lock();
 Future<String> getDatabaseCipher({
   required Future<bool> Function() hasExistingData,
 }) => _keyLock.synchronized(() async {
-  final storage = ProtectedStorage.shared;
+  const storage = ProtectedStorage.shared;
   try {
     return await SecurityPolicy.resolveStorageKey(
-      read: () => storage.read(key: _passwordStorageKey, iOptions: ProtectedStorage.sharedIos),
+      read: () => storage.read(
+        key: _passwordStorageKey,
+        iOptions: ProtectedStorage.sharedIos,
+      ),
       readLegacy: () async {
         if (!PlatformInfos.isIOS) return null;
         return ProtectedStorage.local.read(key: _passwordStorageKey);

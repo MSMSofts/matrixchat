@@ -35,7 +35,8 @@ class NetworkGuard extends http.BaseClient {
     }
     // Never delegate redirect handling to a transport. Only native, bodyless
     // GET/HEAD requests may follow a bounded, independently validated chain.
-    final follow = allowSafeRedirects &&
+    final follow =
+        allowSafeRedirects &&
         request.followRedirects &&
         (request.method == 'GET' || request.method == 'HEAD') &&
         request.contentLength == 0;

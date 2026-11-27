@@ -757,7 +757,8 @@ class ChatController extends State<ChatPageWithRoom>
     timeline?.cancelSubscriptions();
     timeline = null;
     if (_storeInputTimeoutTimer?.isActive == true &&
-        editEvent == null && activeThreadId == null) {
+        editEvent == null &&
+        activeThreadId == null) {
       final vault = _draftVault;
       if (vault != null) unawaited(_saveDraft(vault, sendController.text));
     }
@@ -865,7 +866,8 @@ class ChatController extends State<ChatPageWithRoom>
     final draftVault = _draftVault;
     final revision = ++_draftRevision;
     final wasEditing = editEvent != null || activeThreadId != null;
-    final savedDraft = !wasEditing &&
+    final savedDraft =
+        !wasEditing &&
             draftVault != null &&
             AppSettings.persistEncryptedDrafts.value
         ? _saveDraft(draftVault, sentText)

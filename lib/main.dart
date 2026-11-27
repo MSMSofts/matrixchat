@@ -143,9 +143,7 @@ Future<void> startGui(List<Client> clients, SharedPreferences store) async {
   var useBiometrics = false;
   if (PlatformInfos.supportsAppLock) {
     try {
-      pin = await ProtectedStorage.local.read(
-        key: 'chat.fluffy.app_lock',
-      );
+      pin = await ProtectedStorage.local.read(key: 'chat.fluffy.app_lock');
       useBiometrics =
           (await ProtectedStorage.local.read(
             key: 'chat.fluffy.use_biometrics',

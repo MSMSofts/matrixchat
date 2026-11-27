@@ -150,7 +150,8 @@ class SettingsSecurityView extends StatelessWidget {
                   ),
                   if (!PlatformInfos.isWeb)
                     SettingsSwitchListTile.adaptive(
-                      title: Localizations.localeOf(context).languageCode == 'fa'
+                      title:
+                          Localizations.localeOf(context).languageCode == 'fa'
                           ? 'پیش‌نویس رمزنگاری‌شده'
                           : 'Encrypted drafts',
                       subtitle:

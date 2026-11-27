@@ -43,9 +43,7 @@ class RedirectClient extends http.BaseClient {
     return http.StreamedResponse(
       Stream.value(<int>[]),
       index < locations.length ? 302 : 200,
-      headers: {
-        if (index < locations.length) 'location': locations[index],
-      },
+      headers: {if (index < locations.length) 'location': locations[index]},
     );
   }
 }
@@ -85,8 +83,9 @@ void main() {
     final guard = NetworkGuard(inner, requireEncryptedTimeline: () => false);
     addTearDown(guard.close);
     expect(
-      (await guard.get(Uri.parse('https://matrix.org/_matrix/client/v3/sync')))
-          .statusCode,
+      (await guard.get(
+        Uri.parse('https://matrix.org/_matrix/client/v3/sync'),
+      )).statusCode,
       302,
     );
     expect(inner.urls.length, 1);
@@ -169,23 +168,27 @@ void main() {
     expect(inner.requests, 1);
   });
 
-  test('strict timeline guard rejects unknown event types and path prefixes', () {
-    const base = 'https://matrix.org/proxy/_matrix/client/v3/rooms/!r:matrix.org/send';
-    expect(
-      SecurityPolicy.isPlaintextTimelineSend(
-        'PUT',
-        Uri.parse('$base/com.example.custom/1'),
-      ),
-      isTrue,
-    );
-    expect(
-      SecurityPolicy.isPlaintextTimelineSend(
-        'PUT',
-        Uri.parse('$base/m.room.encrypted/1'),
-      ),
-      isFalse,
-    );
-  });
+  test(
+    'strict timeline guard rejects unknown event types and path prefixes',
+    () {
+      const base =
+          'https://matrix.org/proxy/_matrix/client/v3/rooms/!r:matrix.org/send';
+      expect(
+        SecurityPolicy.isPlaintextTimelineSend(
+          'PUT',
+          Uri.parse('$base/com.example.custom/1'),
+        ),
+        isTrue,
+      );
+      expect(
+        SecurityPolicy.isPlaintextTimelineSend(
+          'PUT',
+          Uri.parse('$base/m.room.encrypted/1'),
+        ),
+        isFalse,
+      );
+    },
+  );
 
   test('strict policy does not block state events or GET requests', () {
     expect(

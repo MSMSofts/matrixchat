@@ -127,7 +127,7 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
     ),
   );
 
-  final secureStorage = ProtectedStorage.shared;
+  const secureStorage = ProtectedStorage.shared;
 
   final vault = MediaVault(
     database,
