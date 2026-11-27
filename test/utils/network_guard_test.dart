@@ -26,7 +26,83 @@ class RecordingClient extends http.BaseClient {
   }
 }
 
+class RedirectClient extends http.BaseClient {
+  final List<Uri> urls = [];
+  final List<Map<String, String>> headers = [];
+  final List<String> locations;
+
+  RedirectClient(this.locations);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    urls.add(request.url);
+    headers.add(Map.of(request.headers));
+    expect(request.followRedirects, isFalse);
+    await request.finalize().drain<void>();
+    final index = urls.length - 1;
+    return http.StreamedResponse(
+      Stream.value(<int>[]),
+      index < locations.length ? 302 : 200,
+      headers: {
+        if (index < locations.length) 'location': locations[index],
+      },
+    );
+  }
+}
+
 void main() {
+  test('same-origin HTTPS media redirect preserves authorization', () async {
+    final inner = RedirectClient(['/new-media']);
+    final guard = NetworkGuard(inner, requireEncryptedTimeline: () => false);
+    addTearDown(guard.close);
+    final result = await guard.get(
+      Uri.parse('https://matrix.org/_matrix/client/v1/media/download/a/b'),
+      headers: {'authorization': 'Bearer test-token'},
+    );
+    expect(result.statusCode, 200);
+    expect(inner.headers.last['authorization'], 'Bearer test-token');
+  });
+
+  test('cross-origin media redirect strips credentials', () async {
+    final inner = RedirectClient(['https://cdn.example/object?signature=test']);
+    final guard = NetworkGuard(inner, requireEncryptedTimeline: () => false);
+    addTearDown(guard.close);
+    final result = await guard.get(
+      Uri.parse('https://matrix.org/_matrix/client/v1/media/download/a/b'),
+      headers: {
+        'authorization': 'Bearer test-token',
+        'cookie': 'secret',
+        'x-private': 'secret',
+        'range': 'bytes=0-9',
+      },
+    );
+    expect(result.statusCode, 200);
+    expect(inner.headers.last, {'range': 'bytes=0-9'});
+  });
+
+  test('non-media cross-origin redirects are not dispatched', () async {
+    final inner = RedirectClient(['https://other.example/path']);
+    final guard = NetworkGuard(inner, requireEncryptedTimeline: () => false);
+    addTearDown(guard.close);
+    expect(
+      (await guard.get(Uri.parse('https://matrix.org/_matrix/client/v3/sync')))
+          .statusCode,
+      302,
+    );
+    expect(inner.urls.length, 1);
+  });
+
+  test('redirect loops are stopped', () async {
+    final inner = RedirectClient(['/start']);
+    final guard = NetworkGuard(inner, requireEncryptedTimeline: () => false);
+    addTearDown(guard.close);
+    expect(
+      (await guard.get(Uri.parse('https://matrix.org/start'))).statusCode,
+      302,
+    );
+    expect(inner.urls.length, 1);
+  });
+
   test('HTTPS accepted; cleartext and URL credentials rejected', () {
     expect(SecurityPolicy.permitsUri(Uri.parse('https://matrix.org')), isTrue);
     expect(SecurityPolicy.permitsUri(Uri.parse('http://matrix.org')), isFalse);

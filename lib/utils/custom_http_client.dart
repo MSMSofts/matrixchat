@@ -49,5 +49,6 @@ class CustomHttpClient {
         AppSettings.requireEncryptedRooms.value ||
         AppSettings.requireVerifiedIdentities.value,
     allowLocalTestHttp: allowLocalTestHttp,
+    allowSafeRedirects: !kIsWeb,
   );
 }
