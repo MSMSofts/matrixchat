@@ -21,6 +21,7 @@ import 'package:fluffychat/pages/chat/utils/web_file_to_x_file.dart';
 import 'package:fluffychat/pages/chat_details/chat_details.dart';
 import 'package:fluffychat/security/draft_vault.dart';
 import 'package:fluffychat/security/media_vault.dart';
+import 'package:fluffychat/security/room_crypto_policy.dart';
 import 'package:fluffychat/utils/adaptive_bottom_sheet.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/file_selector.dart';
@@ -853,7 +854,7 @@ class ChatController extends State<ChatPageWithRoom>
 
     if ((AppSettings.requireEncryptedRooms.value ||
             AppSettings.requireVerifiedIdentities.value) &&
-        !room.encrypted) {
+        !RoomCryptoPolicy.canEncryptRoom(targetRoom)) {
       return;
     }
     // In strict mode, do not allow SDK slash commands to bypass the send policy.

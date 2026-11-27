@@ -27,6 +27,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
       - name: Validate web preparation shell syntax
         run: sh -n scripts/prepare-web.sh
+      - name: Check hardened web sources
+        run: python3 scripts/validate_web_security.py
       - run: flutter pub get --enforce-lockfile
       - name: Check formatting (report diff)
         run: |

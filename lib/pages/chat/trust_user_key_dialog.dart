@@ -7,6 +7,7 @@ import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/key_verification/key_verification_dialog.dart';
 import 'package:fluffychat/security/identity_pin.dart';
+import 'package:fluffychat/security/room_crypto_policy.dart';
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/adaptive_dialog_action.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/dialog_text_field.dart';
@@ -21,6 +22,11 @@ Future<bool> showTrustUserInRoomDialog(BuildContext context, Room room) async {
         !AppSettings.requireVerifiedIdentities.value) {
       return true;
     }
+    _securityBlocked(context, identity: false);
+    return false;
+  }
+
+  if (!RoomCryptoPolicy.canEncryptRoom(room)) {
     _securityBlocked(context, identity: false);
     return false;
   }

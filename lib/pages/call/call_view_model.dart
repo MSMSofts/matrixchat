@@ -9,6 +9,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/security/room_crypto_policy.dart';
 import 'package:fluffychat/security/rtc_security.dart';
 import 'package:fluffychat/utils/call_kit_params.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
@@ -369,7 +370,7 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
       notifyListeners();
       if ((AppSettings.requireEncryptedRooms.value ||
               AppSettings.requireVerifiedIdentities.value) &&
-          !room.encrypted) {
+          !RoomCryptoPolicy.canEncryptRoom(room)) {
         throw StateError('Strict mode requires an encrypted call room.');
       }
       final playWaitingSound =

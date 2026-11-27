@@ -6,6 +6,33 @@ import 'package:fluffychat/security/room_crypto_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('only supported room crypto with enabled SDK is accepted', () {
+    const megolm = 'm.megolm.v1.aes-sha2';
+    expect(
+      RoomCryptoPolicy.canEncrypt(
+        algorithm: megolm,
+        encryptionEnabled: true,
+      ),
+      isTrue,
+    );
+    for (final algorithm in [null, '', 'm.unknown', megolm]) {
+      expect(
+        RoomCryptoPolicy.canEncrypt(
+          algorithm: algorithm,
+          encryptionEnabled: false,
+        ),
+        isFalse,
+      );
+    }
+    expect(
+      RoomCryptoPolicy.canEncrypt(
+        algorithm: 'm.unknown',
+        encryptionEnabled: true,
+      ),
+      isFalse,
+    );
+  });
+
   test('verified identities are pinned and changes are rejected', () async {
     final values = <String, String>{};
     final pin = IdentityPin(
