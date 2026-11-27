@@ -7,6 +7,7 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
@@ -80,10 +81,13 @@ class SettingsSecurityView extends StatelessWidget {
                     setting: AppSettings.sendPublicReadReceipts,
                   ),
                   SettingsSwitchListTile.adaptive(
-                    title: L10n.of(context).shareCrashReports,
-                    subtitle: L10n.of(context).shareCrashReportsDescription,
-                    setting: AppSettings.autoSendErrorReports,
-                    defaultValue: false,
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'اعلان خصوصی'
+                        : 'Private notifications',
+                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'محتوا و نام فرستنده در اعلان پیام نمایش داده نمی‌شود.'
+                        : 'Hide message content and sender in message notifications.',
+                    setting: AppSettings.privateNotifications,
                   ),
                   ListTile(
                     trailing: const Icon(Icons.chevron_right_outlined),
@@ -160,7 +164,7 @@ class SettingsSecurityView extends StatelessWidget {
                         ),
                         underline: const SizedBox.shrink(),
                         value: Matrix.of(context).client.shareKeysWith,
-                        items: ShareKeysWith.values
+                        items: SecurityPolicy.allowedKeySharing
                             .map(
                               (share) => DropdownMenuItem(
                                 value: share,

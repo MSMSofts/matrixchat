@@ -5,6 +5,7 @@
 
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_text_input_dialog.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
@@ -155,8 +156,12 @@ class SettingsSecurityController extends State<SettingsSecurity> {
   Future<void> dehydrateAction() => Matrix.of(context).dehydrateAction(context);
 
   Future<void> changeShareKeysWith(ShareKeysWith? shareKeysWith) async {
-    if (shareKeysWith == null) return;
-    AppSettings.shareKeysWith.setItem(shareKeysWith.name);
+    if (shareKeysWith == null ||
+        !SecurityPolicy.allowedKeySharing.contains(shareKeysWith)) {
+      return;
+    }
+    await AppSettings.shareKeysWith.setItem(shareKeysWith.name);
+    if (!mounted) return;
     Matrix.of(context).client.shareKeysWith = shareKeysWith;
     setState(() {});
   }

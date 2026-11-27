@@ -64,6 +64,7 @@ void main(List<String> args) => runZonedGuarded(() async {
   // widget bindings are initialized already.
   WidgetsFlutterBinding.ensureInitialized();
 
+  Logs().level = Level.error;
   final store = await AppSettings.init();
   Logs().i('Welcome to ${AppSettings.applicationName.value} <3');
 
@@ -104,13 +105,35 @@ void main(List<String> args) => runZonedGuarded(() async {
     return;
   }
 
-  final clients = await ClientManager.getClients(store: store);
+  try {
+    final clients = await ClientManager.getClients(store: store);
 
-  // Started in foreground mode.
-  Logs().i(
-    '${AppSettings.applicationName.value} started in foreground mode. Rendering GUI...',
-  );
-  await startGui(clients, store);
+    // Started in foreground mode.
+    Logs().i(
+      '${AppSettings.applicationName.value} started in foreground mode. Rendering GUI...',
+    );
+    await startGui(clients, store);
+  } catch (_) {
+    final persian = PlatformDispatcher.instance.locale.languageCode == 'fa';
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                persian
+                    ? 'راه‌اندازی امن ناموفق بود. داده‌های محلی را حذف نکنید. پس از باز کردن قفل دستگاه، برنامه را دوباره اجرا کنید.'
+                    : 'Secure startup failed. Do not delete local data. Unlock the device and restart the app.',
+                textAlign: TextAlign.center,
+                textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }, ErrorReporter.onFlutterError);
 
 /// Fetch the pincode for the applock and start the flutter engine.
@@ -128,8 +151,8 @@ Future<void> startGui(List<Client> clients, SharedPreferences store) async {
             key: 'chat.fluffy.use_biometrics',
           )) ==
           'true';
-    } catch (e, s) {
-      Logs().d('Unable to read PIN from Secure storage', e, s);
+    } catch (_) {
+      throw StateError('Unable to read app lock settings securely.');
     }
   }
 
