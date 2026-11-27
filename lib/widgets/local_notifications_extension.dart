@@ -54,22 +54,25 @@ extension LocalNotificationsExtension on MatrixState {
       }
     }
 
-    final title = event.room.getLocalizedDisplayname(
-      MatrixLocals(L10n.of(context)),
-    );
-    var body = event.calcLocalizedBody(
-      MatrixLocals(L10n.of(context)),
-      plaintextBody: true,
-      hideReply: true,
-      hideEdit: true,
-      removeMarkdown: true,
-    );
-    if (!event.room.isDirectChat) {
+    final private = AppSettings.privateNotifications.value;
+    final title = private
+        ? AppSettings.applicationName.value
+        : event.room.getLocalizedDisplayname(MatrixLocals(l10n));
+    var body = private
+        ? l10n.openAppToReadMessages
+        : event.calcLocalizedBody(
+            MatrixLocals(l10n),
+            plaintextBody: true,
+            hideReply: true,
+            hideEdit: true,
+            removeMarkdown: true,
+          );
+    if (!private && !event.room.isDirectChat) {
       final sender =
           await event.fetchSenderUser() ?? event.senderFromMemoryOrFallback;
       body = l10n.senderMessage(sender.calcDisplayname(), body);
     }
-    final avatarUrl = event.room.avatar;
+    final avatarUrl = private ? null : event.room.avatar;
 
     const size = 128;
     const thumbnailMethod = ThumbnailMethod.crop;
@@ -106,7 +109,7 @@ extension LocalNotificationsExtension on MatrixState {
       notificationDetails: NotificationDetails(
         linux: LinuxNotificationDetails(
           sound: ThemeLinuxSound('message-new-instant'),
-          actions: switch (event.type) {
+          actions: private ? [] : switch (event.type) {
             EventTypes.Message ||
             EventTypes.Encrypted ||
             EventTypes.Sticker => [

@@ -30,5 +30,8 @@
   "colorSchemeSeedInt": 4283835834,
   "enableSoftLogout": false,
   "privateNotifications": true,
-  "checkForUpdates": false
+  "checkForUpdates": false,
+  "requireEncryptedRooms": false,
+  "requireVerifiedIdentities": false,
+  "persistPlaintextDrafts": false
 }

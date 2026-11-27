@@ -46,22 +46,20 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
     _isLocked = isActive;
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback(_checkLoggedIn);
     if (isActive && useBiometrics) unlockWithBiometrics();
   }
 
-  Future<void> _checkLoggedIn(_) async {
-    if (widget.isLoggedIn) return;
-
-    await changePincode(null);
-    setState(() {
-      _isLocked = false;
-    });
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (isActive && state == AppLifecycleState.hidden && !_isLocked) {
+    if (isActive &&
+        (state == AppLifecycleState.hidden || state == AppLifecycleState.paused) &&
+        !_isLocked) {
       showLockScreen();
     }
     if (_isLocked &&
@@ -88,18 +86,27 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
       key: 'chat.fluffy.app_lock',
       value: pincode,
     );
-    _pincode = pincode;
-    return;
+    if (!mounted) return;
+    setState(() {
+      _pincode = pincode;
+      if (pincode == null) _isLocked = false;
+    });
   }
 
   Future<bool> unlockWithBiometrics() async {
     _triedAutoBiometrics = true;
     final localAuth = LocalAuthentication();
-    final unlocked = await localAuth.authenticate(
-      localizedReason: 'Please authenticate to unlock the app.',
-      persistAcrossBackgrounding: true,
-      biometricOnly: true,
-    );
+    bool unlocked;
+    try {
+      unlocked = await localAuth.authenticate(
+        localizedReason: 'Please authenticate to unlock the app.',
+        persistAcrossBackgrounding: true,
+        biometricOnly: true,
+      );
+    } catch (_) {
+      return false;
+    }
+    if (!mounted) return false;
     if (unlocked) {
       setState(() {
         _isLocked = false;
@@ -110,7 +117,7 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   }
 
   bool unlock(String pincode) {
-    final isCorrect = pincode == _pincode;
+    final isCorrect = _pincode != null && pincode == _pincode;
     if (isCorrect) {
       setState(() {
         _isLocked = false;
@@ -140,7 +147,17 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
     create: (_) => this,
     child: Stack(
       fit: StackFit.expand,
-      children: [widget.child, if (isLocked) const LockScreen()],
+      children: [
+        ExcludeFocus(
+          excluding: isLocked,
+          child: Visibility(
+            visible: !isLocked,
+            maintainState: true,
+            child: widget.child,
+          ),
+        ),
+        if (isLocked) const LockScreen(),
+      ],
     ),
   );
 }

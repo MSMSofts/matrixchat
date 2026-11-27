@@ -20,12 +20,15 @@ Future<CallKitParams> buildFluffyChatCallKitParams(
   Duration timeout = RtcNotificationContent.defaultLifetime,
 }) async {
   l10n ??= await lookupL10n(PlatformDispatcher.instance.locale);
-  final avatarUrl = await room.avatar?.getThumbnailUri(
-    room.client,
-    width: notificationAvatarDimension,
-    height: notificationAvatarDimension,
-    method: ThumbnailMethod.crop,
-  );
+  final private = AppSettings.privateNotifications.value;
+  final avatarUrl = private
+      ? null
+      : await room.avatar?.getThumbnailUri(
+          room.client,
+          width: notificationAvatarDimension,
+          height: notificationAvatarDimension,
+          method: ThumbnailMethod.crop,
+        );
 
   return CallKitParams(
     id: Uuid().v4(),
@@ -35,7 +38,7 @@ Future<CallKitParams> buildFluffyChatCallKitParams(
       'intent': intent.name,
     },
     appName: AppSettings.applicationName.value,
-    nameCaller: room.getLocalizedDisplayname(),
+    nameCaller: private ? AppSettings.applicationName.value : room.getLocalizedDisplayname(),
     avatar: avatarUrl?.toString(),
     handle: switch (intent) {
       MatrixRtcCallIntent.voice => l10n.voiceCall,
@@ -75,7 +78,7 @@ Future<CallKitParams> buildFluffyChatCallKitParams(
       supportsHolding: false,
       supportsGrouping: false,
       supportsUngrouping: false,
-      includesCallsInRecents: true,
+      includesCallsInRecents: !private,
       ringtonePath: 'system_ringtone_default',
       audioSessionMode: switch (intent) {
         .video => 'videoChat',

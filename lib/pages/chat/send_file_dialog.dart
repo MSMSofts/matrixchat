@@ -12,6 +12,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/pages/chat/image_edit_geometry.dart';
 import 'package:fluffychat/pages/chat/trust_user_key_dialog.dart';
 import 'package:fluffychat/utils/matrix_sdk_extensions/matrix_file_extension.dart';
@@ -155,6 +156,11 @@ class SendFileDialogState extends State<SendFileDialog> {
         final label = _labelTextController.text.trim();
 
         try {
+          if ((AppSettings.requireEncryptedRooms.value ||
+                  AppSettings.requireVerifiedIdentities.value) &&
+              !widget.room.encrypted) {
+            throw StateError('Plaintext attachment blocked.');
+          }
           await widget.room.sendFileEvent(
             file,
             thumbnail: thumbnail,
@@ -173,6 +179,11 @@ class SendFileDialogState extends State<SendFileDialog> {
           );
 
           await Future.delayed(retryAfterDuration);
+          if ((AppSettings.requireEncryptedRooms.value ||
+                  AppSettings.requireVerifiedIdentities.value) &&
+              !widget.room.encrypted) {
+            throw StateError('Plaintext attachment retry blocked.');
+          }
 
           await widget.room.sendFileEvent(
             file,

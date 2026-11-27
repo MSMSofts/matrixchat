@@ -25,11 +25,13 @@ class _LockScreenState extends State<LockScreen> {
   final TextEditingController _textEditingController = TextEditingController();
 
   Future<void> tryUnlockWithBiometrics() async {
+    if (_inputBlocked || !mounted) return;
     setState(() {
       _errorText = null;
     });
 
     final success = await AppLock.of(context).unlockWithBiometrics();
+    if (!mounted) return;
 
     if (success) {
       setState(() {
@@ -44,9 +46,10 @@ class _LockScreenState extends State<LockScreen> {
       _inputBlocked = true;
     });
     Future.delayed(Duration(seconds: _coolDownSeconds)).then((_) {
+      if (!mounted) return;
       setState(() {
         _inputBlocked = false;
-        _coolDownSeconds *= 2;
+        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300).toInt();
         _errorText = null;
       });
     });
@@ -54,6 +57,7 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   Future<void> tryUnlock(String text) async {
+    if (_inputBlocked || !mounted) return;
     text = text.trim();
     setState(() {
       _errorText = null;
@@ -82,9 +86,10 @@ class _LockScreenState extends State<LockScreen> {
       _inputBlocked = true;
     });
     Future.delayed(Duration(seconds: _coolDownSeconds)).then((_) {
+      if (!mounted) return;
       setState(() {
         _inputBlocked = false;
-        _coolDownSeconds *= 2;
+        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300).toInt();
         _errorText = null;
       });
     });

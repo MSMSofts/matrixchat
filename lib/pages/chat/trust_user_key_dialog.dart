@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/pages/key_verification/key_verification_dialog.dart';
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/adaptive_dialog_action.dart';
@@ -13,10 +14,29 @@ import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
 
 Future<bool> showTrustUserInRoomDialog(BuildContext context, Room room) async {
-  if (!room.encrypted) return true;
+  if (!room.encrypted) {
+    if (!AppSettings.requireEncryptedRooms.value &&
+        !AppSettings.requireVerifiedIdentities.value) {
+      return true;
+    }
+    _securityBlocked(context, identity: false);
+    return false;
+  }
 
   final users = await room.requestParticipants();
   if (!context.mounted) return false;
+  if (AppSettings.requireVerifiedIdentities.value) {
+    final allVerified = users.every(
+      (user) =>
+          user.id == room.client.userID ||
+          room.client.userDeviceKeys[user.id]?.masterKey?.verified == true,
+    );
+    if (!allVerified || users.isEmpty) {
+      _securityBlocked(context, identity: true);
+      return false;
+    }
+    return true;
+  }
 
   users.removeWhere((user) {
     if (user.id == room.client.userID) return true;
@@ -158,6 +178,24 @@ Future<bool> showTrustUserInRoomDialog(BuildContext context, Room room) async {
   }
 
   return true;
+}
+
+void _securityBlocked(BuildContext context, {required bool identity}) {
+  if (!context.mounted) return;
+  final persian = Localizations.localeOf(context).languageCode == 'fa';
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        identity
+            ? (persian
+                  ? 'ابتدا هویت مخاطبان را تأیید کنید.'
+                  : 'Verify the participants before sending.')
+            : (persian
+                  ? 'ارسال در اتاق بدون رمزنگاری مجاز نیست.'
+                  : 'Sending to an unencrypted room is blocked.'),
+      ),
+    ),
+  );
 }
 
 enum _Action { allow, deny, verification }

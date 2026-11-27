@@ -328,6 +328,10 @@ class ChatController extends State<ChatPageWithRoom>
     if (draft != null && draft.isNotEmpty) {
       sendController.text = draft;
     }
+    if (!AppSettings.persistPlaintextDrafts.value) {
+      // Preserve the text in the current editor, but stop retaining it on disk.
+      unawaited(prefs.remove('draft_$roomId'));
+    }
   }
 
   Future<void> _shareItems() async {
@@ -772,7 +776,7 @@ class ChatController extends State<ChatPageWithRoom>
         okLabel: l10n.sendAsText,
         cancelLabel: l10n.cancel,
       );
-      if (dialogResult == OkCancelResult.cancel) return;
+      if (dialogResult != OkCancelResult.ok || !mounted) return;
       parseCommands = false;
     }
 
@@ -782,6 +786,16 @@ class ChatController extends State<ChatPageWithRoom>
       room.setTyping(false);
     }
 
+    if ((AppSettings.requireEncryptedRooms.value ||
+            AppSettings.requireVerifiedIdentities.value) &&
+        !room.encrypted) {
+      return;
+    }
+    // In strict mode, do not allow SDK slash commands to bypass the send policy.
+    if (AppSettings.requireEncryptedRooms.value ||
+        AppSettings.requireVerifiedIdentities.value) {
+      parseCommands = false;
+    }
     // ignore: unawaited_futures
     room.sendTextEvent(
       sendController.text,
@@ -1251,7 +1265,9 @@ class ChatController extends State<ChatPageWithRoom>
     setState(() => selectedEvents.clear());
   }
 
-  void sendAgainAction() {
+  Future<void> sendAgainAction() async {
+    final proceed = await showTrustUserInRoomDialog(context, room);
+    if (!mounted || !proceed || selectedEvents.isEmpty) return;
     final event = selectedEvents.first;
     if (event.status.isError) {
       event.sendAgain();
@@ -1602,10 +1618,13 @@ class ChatController extends State<ChatPageWithRoom>
     }
 
     _storeInputTimeoutTimer?.cancel();
-    _storeInputTimeoutTimer = Timer(_storeInputTimeout, () async {
-      final prefs = Matrix.of(context).store;
-      await prefs.setString('draft_$roomId', text);
-    });
+    if (AppSettings.persistPlaintextDrafts.value) {
+      _storeInputTimeoutTimer = Timer(_storeInputTimeout, () async {
+        if (!mounted || !AppSettings.persistPlaintextDrafts.value) return;
+        final prefs = Matrix.of(context).store;
+        await prefs.setString('draft_$roomId', text);
+      });
+    }
     if (text.endsWith(' ') && Matrix.of(context).hasComplexBundles) {
       final clients = currentRoomBundle;
       for (final client in clients) {

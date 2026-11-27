@@ -6,6 +6,8 @@
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/sign_in/view_model/model/public_homeserver_data.dart';
+import 'package:fluffychat/security/security_policy.dart';
+import 'package:fluffychat/utils/custom_http_client.dart';
 import 'package:fluffychat/utils/localized_exception_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/sign_in_flows/oidc_login.dart';
@@ -30,6 +32,12 @@ Future<void> connectToHomeserverFlow(
     var homeserver = Uri.parse(homeserverInput);
     if (homeserver.scheme.isEmpty) {
       homeserver = Uri.https(homeserverInput, '');
+    }
+    if (!SecurityPolicy.permitsUri(
+      homeserver,
+      allowLocalTestHttp: CustomHttpClient.allowLocalTestHttp,
+    )) {
+      throw StateError('A secure HTTPS homeserver is required.');
     }
     final l10n = L10n.of(context);
     final client = await Matrix.of(context).getLoginClient();
@@ -81,7 +89,7 @@ Future<void> connectToHomeserverFlow(
       context.go('/backup');
     }
   } catch (e, s) {
-    Logs().w('Unable to login', e, s);
+    Logs().w('Unable to log in. Sensitive diagnostics omitted.');
     setState(AsyncSnapshot.withError(ConnectionState.done, e, s));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

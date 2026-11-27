@@ -89,6 +89,33 @@ class SettingsSecurityView extends StatelessWidget {
                         : 'Hide message content and sender in message notifications.',
                     setting: AppSettings.privateNotifications,
                   ),
+                  SettingsSwitchListTile.adaptive(
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'ارسال فقط در اتاق رمزنگاری‌شده'
+                        : 'Encrypted rooms only',
+                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'ارسال پیام معمولی بدون رمزنگاری مسدود می‌شود.'
+                        : 'Block plaintext message sends.',
+                    setting: AppSettings.requireEncryptedRooms,
+                  ),
+                  SettingsSwitchListTile.adaptive(
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'الزام تأیید هویت مخاطبان'
+                        : 'Require verified identities',
+                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'در مسیرهای ارسال بررسی‌شده، تأیید هویت لازم است.'
+                        : 'Require verified identities in guarded send flows.',
+                    setting: AppSettings.requireVerifiedIdentities,
+                  ),
+                  SettingsSwitchListTile.adaptive(
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'ذخیره پیش‌نویس بدون رمزنگاری'
+                        : 'Persist unencrypted drafts',
+                    subtitle: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'در حالت خاموش، پیش‌نویس فقط در ویرایشگر باقی می‌ماند.'
+                        : 'When off, new drafts remain in the editor only.',
+                    setting: AppSettings.persistPlaintextDrafts,
+                  ),
                   ListTile(
                     trailing: const Icon(Icons.chevron_right_outlined),
                     title: Text(L10n.of(context).blockedUsers),

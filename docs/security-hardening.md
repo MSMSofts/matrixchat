@@ -35,3 +35,11 @@ Back up encrypted databases and recovery keys before testing. Never clear applic
 - Security Center and privacy controls; MLS, post-quantum and key transparency only when interoperable standards and SDK support are established.
 
 Preserve compatibility with Matrix and upstream license notices. Do not introduce custom cryptographic protocols.
+
+## R2 implementation candidate
+- SDK HTTP guard rejects cleartext URLs and user-info; automatic HTTP redirects are disabled. Direct SDK requests are rechecked. This may block legitimate media redirects; verify Matrix authenticated media compatibility and design a safe redirect implementation before release. Local HTTP test servers require a debug-only explicit dart define, MATRIXCHAT_ALLOW_LOCAL_TEST_HTTP=true; production builds cannot enable it.
+- Optional encrypted-room and verified-identity settings guard the reviewed text, shared-content, attachment, voice, poll, location, and retry UI paths. The HTTP boundary additionally blocks listed plaintext timeline event types. This is not a complete SDK E2EE proof: media uploads, arbitrary event types, delegated auth, queued events, and unreviewed call/send paths require testing. Strict mode disables text slash commands and old notification quick replies. It can block delivery to unverified users and public rooms.
+- New drafts are not persisted to plaintext preferences by default. Existing drafts are loaded into the editor and their preference is removed on opening the room; unopened legacy drafts remain. Unsent drafts can be lost when closing the editor. No secure persistent draft store yet.
+- Private desktop/browser notifications and native call presentation omit names and avatars; platform history and call dialogs require verification. Notification payloads still contain local routing identifiers.
+- App lock removes automatic PIN deletion on logged-out startup, hides underlying UI while locked, checks lifecycle and mounted state, and caps UI retry delay. This is UI protection, not hardware-backed secret storage or restart-resistant brute-force prevention.
+- Added six transport tests and a read-only GitHub Actions workflow. CI and platform verification are still required.
