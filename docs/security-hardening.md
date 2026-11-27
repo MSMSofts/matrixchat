@@ -100,3 +100,7 @@ Preserve compatibility with Matrix and upstream license notices. Do not introduc
 
 ## R12 — native encryption verification gate
 - Added a file-backed SQLCipher test using the same factory and key helper as production. The test checks cipher availability, draft/media readback after closing and reopening, absence of the ASCII sentinel and plaintext SQLite header in the database, and rejection of a wrong key without changing the existing file. This is a CI test, not a result yet; real mobile/desktop keychain, WAL, crash and migration tests remain necessary.
+
+## R14 — web deployment and upstream isolation
+- Web bootstrap and OAuth callback scripts moved out of inline HTML. Docker web build omits source maps; Nginx serves security headers, denies embedding, MIME sniffing and plugin objects, suppresses referrers, disallows unnecessary browser features, and rejects map/dotfile requests. Restrictive script/worker/connect CSP is report-only pending browser testing. TLS/HSTS must be configured at the HTTPS reverse proxy. Browser IndexedDB/localStorage and SSO callback fallback are not equivalent to native SQLCipher; dedicated origin and browser testing are required.
+- Legacy upstream publishing, release, Flutter update and Matrix notification jobs are scoped to the original upstream repository; they will not publish or notify from MatrixChat after merge. Existing main workflows remain active until this branch is merged. Independent signed candidate workflows replace automatic publication; no credentials or store deployment configured.
