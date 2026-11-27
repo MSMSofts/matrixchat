@@ -50,7 +50,11 @@ jobs:
       - uses: ./.github/actions/free_up_space
       - run: flutter pub get --enforce-lockfile
       - name: Build universal APK with ephemeral debug signature
-        run: flutter build apk --release --no-pub --target-platform android-arm,android-arm64,android-x64
+        # Flutter must regenerate plugin registration in release mode.
+        # --no-pub after a generic pub get retained integration_test in Java.
+        run: |
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64
+          git diff --exit-code pubspec.lock
       - name: Stage APK
         run: |
           mkdir -p dist
@@ -120,8 +124,20 @@ jobs:
         with:
           persist-credentials: false
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        if: matrix.arch == 'x64'
         with:
           flutter-version-file: .fvmrc
+      - name: Bootstrap exact Flutter SDK from source for ARM64
+        if: matrix.arch == 'arm64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')
+          git clone --depth 1 --branch "$version" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter-arm64"
+          git -C "$RUNNER_TEMP/flutter-arm64" describe --tags --exact-match
+          echo "$RUNNER_TEMP/flutter-arm64/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter-arm64/bin/flutter" --version
+          "$RUNNER_TEMP/flutter-arm64/bin/flutter" precache --linux
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
       - name: Install system build dependencies
         run: sudo apt-get update && sudo apt-get install -y git wget curl clang cmake ninja-build pkg-config libgtk-3-dev libblkid-dev liblzma-dev libjsoncpp-dev cmake-data libsecret-1-dev libsecret-1-0 librhash1 libssl-dev libwebkit2gtk-4.1-dev libpulse-dev
@@ -223,7 +239,20 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select --switch /Applications/Xcode_26.3.app
       - run: flutter pub get --enforce-lockfile
-      - run: flutter build ios --release --no-pub --no-codesign
+      - name: Build unsigned iOS app (retry transient Xcode resolver failures)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if flutter build ios --release --no-codesign; then
+              git diff --exit-code pubspec.lock
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            # Xcode previously crashed during concurrent SwiftPM package resolution.
+            # Resolve packages in a separate invocation, keeping the pinned project.
+            xcodebuild -resolvePackageDependencies -project ios/Runner.xcodeproj -scheme Runner || true
+          done
       - name: Archive unsigned device app
         run: |
           mkdir -p dist

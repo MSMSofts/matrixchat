@@ -37,3 +37,6 @@ No candidate is approved until platform build results, installation, login,
 encrypted messaging, attachments, migration/recovery and RTC tests are
 reviewed. Production signing, a complete brand/identifier migration and
 independent security review are separate release gates.
+
+## Build recovery
+The first run produced Windows x64, Linux x64, macOS and web artifacts. Android failed because a release build using --no-pub retained the integration_test plugin in generated Java; the candidate build now regenerates release registration and checks the lockfile. Linux ARM64 uses the exact .fvmrc Flutter tag from Git rather than a missing ARM64 prebuilt SDK archive. iOS retries transient Xcode SwiftPM resolution crashes and separately resolves packages. These are targeted build fixes, not verified successful outputs until the next run finishes.
