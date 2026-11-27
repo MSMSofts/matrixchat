@@ -116,7 +116,8 @@ class SettingsSecurityController extends State<SettingsSecurity> {
       maxLength: 6,
     );
     if (pin == null || !mounted || lock.isLocked) return false;
-    if (lock.verifyCurrentPin(pin)) return true;
+    if (await lock.verifyCurrentPin(pin)) return mounted && !lock.isLocked;
+    if (!mounted) return false;
     lock.showLockScreen();
     return false;
   }

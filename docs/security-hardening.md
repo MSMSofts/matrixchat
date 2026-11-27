@@ -54,3 +54,5 @@ Preserve compatibility with Matrix and upstream license notices. Do not introduc
 - Hardware-backed vault, encrypted persistent media cache, restart-resistant PIN limits, secure draft persistence, and full native/RTC security testing are still outstanding.
 
 - Voice recording cancellation and send completion dispose the recorder and delete the app-owned temporary recording file after the callback completes. Active recording files remain plaintext; crashes can leave files behind. This is cleanup, not guaranteed secure erasure. The current callback does not preserve failed unsent voice drafts.
+
+- PIN attempt counters and retry deadlines are stored via FlutterSecureStorage with readback verification. Settings changes use the same throttled verification path as the lock screen. Biometric success resets the counter only if secure storage is available. The limit is best-effort across process restarts; it is not resistant to clock manipulation, compromised OS, or storage rollback.

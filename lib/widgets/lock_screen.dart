@@ -73,7 +73,11 @@ class _LockScreenState extends State<LockScreen> {
       return;
     }
 
-    if (AppLock.of(context).unlock(text)) {
+    final lock = AppLock.of(context);
+    setState(() => _inputBlocked = true);
+    final success = await lock.unlock(text);
+    if (!mounted) return;
+    if (success) {
       setState(() {
         _inputBlocked = false;
         _errorText = null;
@@ -82,6 +86,7 @@ class _LockScreenState extends State<LockScreen> {
       return;
     }
 
+    _coolDownSeconds = lock.pinRetryAfterSeconds.clamp(5, 300);
     setState(() {
       _errorText = L10n.of(context).wrongPinEntered(_coolDownSeconds);
       _inputBlocked = true;
@@ -90,7 +95,6 @@ class _LockScreenState extends State<LockScreen> {
       if (!mounted) return;
       setState(() {
         _inputBlocked = false;
-        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300);
         _errorText = null;
       });
     });

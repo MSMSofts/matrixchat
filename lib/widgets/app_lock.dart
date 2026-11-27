@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'package:fluffychat/security/pin_attempt_guard.dart';
 import 'package:fluffychat/widgets/lock_screen.dart';
 import 'package:fluffychat/widgets/mxc_image.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -28,6 +29,13 @@ class AppLockWidget extends StatefulWidget {
 }
 
 class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
+  static const _attemptKey = 'matrixchat.pin_attempt_state';
+  static const _storage = FlutterSecureStorage();
+  final _pinAttempts = PinAttemptGuard(
+    read: () => _storage.read(key: _attemptKey),
+    write: (value) => _storage.write(key: _attemptKey, value: value),
+  );
+
   String? _pincode;
   bool _isLocked = false;
   bool _useBiometrics = false;
@@ -75,7 +83,10 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
   bool get isLocked => _isLocked;
   bool get hasPincode => _pincode != null;
 
-  bool verifyCurrentPin(String pin) => _pincode != null && pin == _pincode;
+  int get pinRetryAfterSeconds => _pinAttempts.retryAfterSeconds;
+
+  Future<bool> verifyCurrentPin(String pin) =>
+      _pinAttempts.verify(() => _pincode != null && pin == _pincode);
 
   Future<void> changeUseBiometrics(bool useBiometrics) async {
     await const FlutterSecureStorage().write(
@@ -117,6 +128,12 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
     }
     if (!mounted) return false;
     if (unlocked) {
+      try {
+        await _pinAttempts.resetAfterBiometric();
+      } catch (_) {
+        return false;
+      }
+      if (!mounted) return false;
       setState(() {
         _isLocked = false;
         _triedAutoBiometrics = false;
@@ -125,8 +142,9 @@ class AppLock extends State<AppLockWidget> with WidgetsBindingObserver {
     return unlocked;
   }
 
-  bool unlock(String pincode) {
-    final isCorrect = verifyCurrentPin(pincode);
+  Future<bool> unlock(String pincode) async {
+    final isCorrect = await verifyCurrentPin(pincode);
+    if (!mounted) return false;
     if (isCorrect) {
       setState(() {
         _isLocked = false;
