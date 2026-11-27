@@ -6,6 +6,7 @@
 import 'dart:io';
 
 import 'package:fluffychat/config/setting_keys.dart';
+import 'package:fluffychat/security/media_vault.dart';
 import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:flutter/foundation.dart';
@@ -81,9 +82,6 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
     },
   );
   final cacheEnabled = AppSettings.persistMediaCache.value;
-  final fileStorageLocation = cacheEnabled
-      ? await getFileStorageLocation()
-      : null;
   final helper = SQfLiteEncryptionHelper(
     factory: factory,
     path: path,
@@ -111,18 +109,23 @@ Future<MatrixSdkDatabase> _constructDatabase(String clientName) async {
 
   final secureStorage = FlutterSecureStorage(iOptions: iosOptions);
 
-  return await MatrixSdkDatabase.init(
+  final vault = MediaVault(
+    database,
+    cacheEnabled: () => AppSettings.persistMediaCache.value,
+  );
+  final matrixDatabase = VaultMatrixDatabase(
     clientName,
     database: database,
-    maxFileSize: cacheEnabled ? 1000 * 1000 * 10 : 0,
-    fileStorageLocation: fileStorageLocation?.uri,
-    deleteFilesAfterDuration: const Duration(days: 30),
+    vault: vault,
+    maxFileSize: cacheEnabled ? MediaVault.maxCachedFileBytes : 0,
     secureStorage: (
       read: (key) => secureStorage.read(key: key),
       write: (key, value) => secureStorage.write(key: key, value: value),
       delete: (key) => secureStorage.delete(key: key),
     ),
   );
+  await matrixDatabase.open();
+  return matrixDatabase;
 }
 
 Future<String> _getDatabaseDirectory() async {

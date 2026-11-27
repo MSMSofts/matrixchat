@@ -38,7 +38,11 @@ extension NotificationAvatarExtension on Client {
   /// This loads the avatar for a room and also stores it in a temporary
   /// directory so the Notification Service Extension can access it later.
   Future<String?> getIosNotificationAvatar(Uri? roomAvatar) async {
-    if (roomAvatar == null || !AppSettings.persistMediaCache.value) return null;
+    if (roomAvatar == null ||
+        AppSettings.privateNotifications.value ||
+        !AppSettings.persistMediaCache.value) {
+      return null;
+    }
 
     final directory = await getFileStorageLocation();
     if (directory == null) return null;

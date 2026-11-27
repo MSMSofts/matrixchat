@@ -121,8 +121,8 @@ class SettingsSecurityView extends StatelessWidget {
                         ? 'کش دائمی رسانه'
                         : 'Persistent media cache',
                     subtitle: Localizations.localeOf(context).languageCode == 'fa'
-                        ? 'خاموش: ذخیره معمول رسانه روی دیسک محدود می‌شود. برای تغییر کامل برنامه را دوباره اجرا کنید.'
-                        : 'Off limits ordinary media caching on disk. Restart to apply all changes.',
+                        ? 'خاموش: فقط فایل‌های در انتظار ارسال نگهداری می‌شوند. برای اعمال کامل برنامه را دوباره اجرا کنید.'
+                        : 'Off limits regular disk caching; pending uploads remain protected. Restart to apply.',
                     setting: AppSettings.persistMediaCache,
                   ),
                   ListTile(

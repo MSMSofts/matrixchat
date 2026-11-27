@@ -26,4 +26,4 @@ jobs:
         run: flutter analyze
       - name: Security unit tests
         if: ${{ !cancelled() }}
-        run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart
+        run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart test/utils/media_vault_test.dart
