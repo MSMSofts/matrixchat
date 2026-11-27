@@ -52,8 +52,9 @@ class _SecurityStatusPanelState extends State<SecurityStatusPanel> {
       'tee' => 'Trusted Execution Environment',
       'hardware' => fa ? 'سخت‌افزار امن' : 'Secure hardware',
       'software' => fa ? 'نرم‌افزاری' : 'Software',
-      'unavailable' || 'unsupported' || 'unknown' =>
-        fa ? 'قابل تأیید نیست' : 'Not confirmed',
+      'unavailable' ||
+      'unsupported' ||
+      'unknown' => fa ? 'قابل تأیید نیست' : 'Not confirmed',
       _ => fa ? 'آزمون نشده' : 'Not tested',
     };
 
@@ -72,19 +73,29 @@ class _SecurityStatusPanelState extends State<SecurityStatusPanel> {
           subtitle: Text(
             nativeVault
                 ? 'SQLCipher account vault'
-                : (fa ? 'حفاظت معادل تأیید نشده' : 'Equivalent protection unconfirmed'),
+                : (fa
+                      ? 'حفاظت معادل تأیید نشده'
+                      : 'Equivalent protection unconfirmed'),
           ),
         ),
         ListTile(
-          title: Text(fa ? 'اشتراک کلید فقط با دستگاه تأییدشده' : 'Verified-only key sharing'),
+          title: Text(
+            fa
+                ? 'اشتراک کلید فقط با دستگاه تأییدشده'
+                : 'Verified-only key sharing',
+          ),
           trailing: Text(status(verifiedOnly)),
         ),
         ListTile(
-          title: Text(fa ? 'ارسال رمزنگاری‌شده اجباری' : 'Encrypted sends required'),
-          trailing: Text(status(
-            AppSettings.requireEncryptedRooms.value ||
-                AppSettings.requireVerifiedIdentities.value,
-          )),
+          title: Text(
+            fa ? 'ارسال رمزنگاری‌شده اجباری' : 'Encrypted sends required',
+          ),
+          trailing: Text(
+            status(
+              AppSettings.requireEncryptedRooms.value ||
+                  AppSettings.requireVerifiedIdentities.value,
+            ),
+          ),
         ),
         ListTile(
           title: Text(fa ? 'کنترل هویت مخاطب' : 'Identity checks'),
@@ -92,7 +103,11 @@ class _SecurityStatusPanelState extends State<SecurityStatusPanel> {
         ),
         if (PlatformInfos.isAndroid)
           ListTile(
-            title: Text(fa ? 'آزمون قابلیت سخت‌افزاری Keystore' : 'Test Android Keystore capability'),
+            title: Text(
+              fa
+                  ? 'آزمون قابلیت سخت‌افزاری Keystore'
+                  : 'Test Android Keystore capability',
+            ),
             subtitle: Text(
               fa
                   ? '$hardware — کلید آزمایشی مستقل؛ نه کلید دیتابیس'
