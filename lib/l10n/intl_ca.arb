@@ -1656,7 +1656,6 @@
     },
     "jumpToLastReadMessage": "Salta a l'últim missatge llegit",
     "commandHint_cuddle": "Envia una carícia",
-    "reportErrorDescription": "😭 Oh no. Hi ha hagut algun error. Si vols, pots informar d'aquest bug a l'equip de desenvolupament.",
     "removeYourAvatar": "Esborra el teu avatar",
     "@removeYourAvatar": {
         "type": "String",
@@ -2140,7 +2139,6 @@
     "hideInvalidOrUnknownMessageFormats": "Amaga els missatges que tinguin un format desconegut",
     "passwordRecoverySettings": "Recuperació de contrasenya",
     "gallery": "Galeria",
-    "noDatabaseEncryption": "No es pot xifrar la base de dades en aquesta plataforma",
     "usersMustKnock": "Lis membres han de picar a la porta",
     "noOneCanJoin": "Ningú s'hi pot ficar",
     "customEmojisAndStickersBody": "Afegeix o comparteix emojis o stickers. Els podràs fer servir en qualsevol conversa.",

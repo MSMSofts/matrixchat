@@ -1883,7 +1883,6 @@
     "readUpToHere": "Bis hier gelesen",
     "jump": "Springen",
     "openLinkInBrowser": "Link im Browser öffnen",
-    "reportErrorDescription": "😭 Oh nein. Etwas ist schief gelaufen. Wenn du möchtest, kannst du den Bug bei den Entwicklern melden.",
     "report": "Melden",
     "importNow": "Jetzt importieren",
     "importEmojis": "Emojis importieren",
@@ -2087,7 +2086,6 @@
     "incomingMessages": "Eingehende Nachrichten",
     "commandHint_unignore": "Angegebene Matrix-ID nicht mehr ignorieren",
     "commandHint_ignore": "Angegebene Matrix-ID ignorieren",
-    "noDatabaseEncryption": "Datenbankverschlüsselung wird auf dieser Plattform nicht unterstützt",
     "stickers": "Sticker",
     "discover": "Entdecken",
     "unreadChatsInApp": "{appname}: {unread} ungelesene Chats",
@@ -2779,8 +2777,6 @@
     "doubleTapToReact": "Doppeltippen, um zu reagieren",
     "doubleTapToReactDescription": "Doppeltippen auf eine Nachricht, um zu reagieren, statt um Text auszuwählen",
     "doubleTapReaction": "Doppeltippreaktion",
-    "shareCrashReports": "Absturzberichte teilen",
-    "shareCrashReportsDescription": "Absturzberichte automatisch mit den Entwicklern teilen?",
     "countActiveCallMembers": "{count} aktive Anrufteilnehmer",
     "@countActiveCallMembers": {
         "placeholders": {
