@@ -104,19 +104,17 @@ class VaultMatrixDatabase extends MatrixSdkDatabase {
   final MediaVault vault;
 
   VaultMatrixDatabase(
-    String name, {
+    super.name, {
     required Database database,
     required this.vault,
-    required int maxFileSize,
+    required super.maxFileSize,
     required ({
       Future<String?> Function(String) read,
       Future<void> Function(String, String) write,
       Future<void> Function(String) delete,
     }) secureStorage,
   }) : super.buildWithoutOpen(
-         name,
          database: database,
-         maxFileSize: maxFileSize,
          secureStorage: secureStorage,
        );
 
