@@ -35,6 +35,8 @@ configurations.all {
 // CI candidates use a separate Android application ID and ephemeral debug
 // signing. Production release signing remains unchanged.
 val matrixchatCandidate = System.getenv("MATRIXCHAT_CANDIDATE_BUILD") == "true"
+val matrixchatSignedPreview = System.getenv("MATRIXCHAT_SIGNED_PREVIEW") == "true"
+require(!matrixchatCandidate || !matrixchatSignedPreview) { "Select one MatrixChat build identity" }
 
 android {
     namespace = "chat.fluffy.fluffychat"
@@ -49,6 +51,18 @@ android {
     }
 
     signingConfigs {
+       if (matrixchatSignedPreview) {
+            create("matrixchatPreview") {
+                fun requiredEnv(name: String): String =
+                    System.getenv(name)?.takeIf { it.isNotEmpty() }
+                        ?: error("Missing required preview signing configuration: $name")
+                storeFile = file(requiredEnv("MATRIXCHAT_PREVIEW_KEYSTORE"))
+                require(storeFile?.isFile == true) { "Preview signing key is missing" }
+                storePassword = requiredEnv("MATRIXCHAT_PREVIEW_STORE_PASSWORD")
+                keyAlias = requiredEnv("MATRIXCHAT_PREVIEW_KEY_ALIAS")
+                keyPassword = requiredEnv("MATRIXCHAT_PREVIEW_KEY_PASSWORD")
+            }
+       }
        create("release") {
             keyAlias = "dummyAlias"
             keyPassword = "dummyPassword"
@@ -70,7 +84,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = if (matrixchatCandidate) "com.msmsofts.matrixchat.candidate" else "chat.fluffy.fluffychat"
+        applicationId = when {
+            matrixchatSignedPreview -> "com.msmsofts.matrixchat.preview"
+            matrixchatCandidate -> "com.msmsofts.matrixchat.candidate"
+            else -> "chat.fluffy.fluffychat"
+        }
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -82,7 +100,11 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName(if (matrixchatCandidate) "debug" else "release")
+            signingConfig = signingConfigs.getByName(when {
+                matrixchatSignedPreview -> "matrixchatPreview"
+                matrixchatCandidate -> "debug"
+                else -> "release"
+            })
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

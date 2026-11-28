@@ -74,7 +74,7 @@ SPDX-FileCopyrightText = "2026-Present Christian Kußowski"
 SPDX-License-Identifier = "LicenseRef-All-Rights-Reserved"
 
 [[annotations]]
-path = ["release/candidate.json"]
+path = ["release/candidate.json", "release/verified-rc1.json"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 MatrixChat contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"

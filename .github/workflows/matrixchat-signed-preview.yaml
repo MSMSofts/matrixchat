@@ -1,0 +1,72 @@
+name: MatrixChat Signed Android Preview
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: matrixchat-signed-android-preview
+  cancel-in-progress: false
+
+jobs:
+  signed-preview:
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening' && vars.MATRIXCHAT_ENABLE_SIGNED_PREVIEW == 'true'
+    environment: matrixchat-signing-preview
+    runs-on: ubuntu-26.04
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - uses: ./.github/actions/free_up_space
+      - run: flutter pub get --enforce-lockfile
+      - run: dart format --output=none --set-exit-if-changed lib/ test/
+      - run: flutter analyze
+      - run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart test/utils/media_vault_test.dart test/utils/rtc_security_test.dart test/utils/identity_pin_test.dart test/utils/draft_vault_test.dart test/utils/sqlcipher_vault_test.dart
+      - name: Build preview with owner-provisioned persistent signing key
+        env:
+          MATRIXCHAT_SIGNED_PREVIEW: 'true'
+          KEYSTORE_B64: ${{ secrets.MATRIXCHAT_PREVIEW_KEYSTORE_B64 }}
+          MATRIXCHAT_PREVIEW_STORE_PASSWORD: ${{ secrets.MATRIXCHAT_PREVIEW_STORE_PASSWORD }}
+          MATRIXCHAT_PREVIEW_KEY_ALIAS: ${{ secrets.MATRIXCHAT_PREVIEW_KEY_ALIAS }}
+          MATRIXCHAT_PREVIEW_KEY_PASSWORD: ${{ secrets.MATRIXCHAT_PREVIEW_KEY_PASSWORD }}
+          EXPECTED_CERT_SHA256: ${{ vars.MATRIXCHAT_PREVIEW_CERT_SHA256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          : "${KEYSTORE_B64:?Missing protected keystore}"
+          : "${MATRIXCHAT_PREVIEW_STORE_PASSWORD:?Missing store password}"
+          : "${MATRIXCHAT_PREVIEW_KEY_ALIAS:?Missing key alias}"
+          : "${MATRIXCHAT_PREVIEW_KEY_PASSWORD:?Missing key password}"
+          expected=$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          [[ "$expected" =~ ^[0-9a-f]{64}$ ]]
+          key=$(mktemp "$RUNNER_TEMP/matrixchat-preview.XXXXXX")
+          trap 'rm -f "$key"' EXIT
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key"
+          unset KEYSTORE_B64
+          export MATRIXCHAT_PREVIEW_KEYSTORE="$key"
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64
+          git diff --exit-code pubspec.lock
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/matrixchat-android-signed-preview.apk
+          apksigner=$(find "${ANDROID_HOME}/build-tools" -type f -name apksigner | sort -V | tail -1)
+          test -n "$apksigner"
+          "$apksigner" verify --verbose --print-certs dist/matrixchat-android-signed-preview.apk > "$RUNNER_TEMP/cert.txt"
+          actual=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/cert.txt" | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          test "$actual" = "$expected"
+          test "$(grep -c '^Signer #[0-9]* certificate SHA-256 digest:' "$RUNNER_TEMP/cert.txt")" -eq 1
+          printf '%s\n' "$actual" > dist/SIGNER_SHA256
+      - name: Record source, license and SHA-256
+        run: python3 scripts/candidate_manifest.py android-signed-preview "Release mode; persistent owner-provisioned preview certificate; not production-approved"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-android-signed-preview-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14

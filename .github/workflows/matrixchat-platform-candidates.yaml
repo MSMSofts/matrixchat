@@ -32,7 +32,7 @@ jobs:
       - run: flutter pub get --enforce-lockfile
       - run: dart format --output=none --set-exit-if-changed lib/ test/
       - run: flutter analyze
-      - run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart test/utils/media_vault_test.dart test/utils/rtc_security_test.dart test/utils/identity_pin_test.dart test/utils/draft_vault_test.dart test/utils/sqlcipher_vault_test.dart
+      - run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart test/utils/media_vault_test.dart test/utils/rtc_security_test.dart test/utils/identity_pin_test.dart test/utils/draft_vault_test.dart test/utils/sqlcipher_vault_test.dart test/utils/update_version_test.dart
       - run: python3 scripts/validate_web_security.py
 
   android:

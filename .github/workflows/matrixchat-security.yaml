@@ -25,6 +25,8 @@ jobs:
         with:
           flutter-version-file: .fvmrc
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      - name: Test release payload verification
+        run: python3 scripts/test_release_payload.py
       - name: Validate web preparation shell syntax
         run: sh -n scripts/prepare-web.sh
       - name: Check hardened web sources
@@ -40,7 +42,7 @@ jobs:
         run: flutter analyze
       - name: Security unit tests
         if: ${{ !cancelled() }}
-        run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart test/utils/media_vault_test.dart test/utils/rtc_security_test.dart test/utils/identity_pin_test.dart test/utils/draft_vault_test.dart test/utils/sqlcipher_vault_test.dart
+        run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart test/utils/media_vault_test.dart test/utils/rtc_security_test.dart test/utils/identity_pin_test.dart test/utils/draft_vault_test.dart test/utils/sqlcipher_vault_test.dart test/utils/update_version_test.dart
 
   dependency-audit:
     runs-on: ubuntu-latest

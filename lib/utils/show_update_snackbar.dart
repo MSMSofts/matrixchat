@@ -23,12 +23,19 @@ abstract class UpdateNotifier {
       'https://github.com/MSMSofts/matrixchat/releases';
 
   static bool isNewerStableVersion(String candidate, String current) {
-    final pattern = RegExp(r'^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$');
-    if (!pattern.hasMatch(candidate) || !pattern.hasMatch(current)) return false;
-    final a = candidate.split('.').map(int.parse).toList();
-    final b = current.split('.').map(int.parse).toList();
+    final pattern = RegExp(
+      r'^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$',
+    );
+    if (!pattern.hasMatch(candidate) || !pattern.hasMatch(current)) {
+      return false;
+    }
+    final a = candidate.split('.');
+    final b = current.split('.');
     for (var i = 0; i < 3; i++) {
-      if (a[i] != b[i]) return a[i] > b[i];
+      final left = int.tryParse(a[i]);
+      final right = int.tryParse(b[i]);
+      if (left == null || right == null) return false;
+      if (left != right) return left > right;
     }
     return false;
   }

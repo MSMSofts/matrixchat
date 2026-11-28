@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "project": "MatrixChat",
+  "tag": "v2.11.6-rc.1",
+  "source_commit": "7503752f99131b6eca5f38931674c3cc951eb8c6",
+  "release_id": 461221945,
+  "assembly_run": 46092187922,
+  "assembly_artifact": 15241234274,
+  "verification": "Computed SHA-256 from the original assembled ZIP and compared to GitHub's published asset digests; SHA256SUMS also verified.",
+  "assets": {
+    "LICENSE": "70366abbcbe3b77f402536af9f09649319dc24ba8a92a00efa54b5b0177ae2fb",
+    "RELEASE.json": "d359885e78864743c8735c30c7b2fa06adb8dc1a5eca9df2f23d3488b3a7c287",
+    "RELEASE_NOTES.md": "f21d95922041041d73642d01c54923ed133668fab6b706af7fba4ab7f0b9c5b4",
+    "SHA256SUMS": "b8e3fc765159b78cfba32d24e7636048167d5104ea0edfb471b934c39558d90c",
+    "matrixchat-2.11.6-rc.1-android-candidate.apk": "d1bff4856edd35838a8069bf171deb9e38994960c506d0ffbe9a998e2cb53a26",
+    "matrixchat-2.11.6-rc.1-ios-unsigned.zip": "be16a914c9b5f71739ad26288e12ca76c70d6536fd4f847b03fa996ec569300a",
+    "matrixchat-2.11.6-rc.1-linux-arm64.tar.gz": "6e649052f069ab3b52a2667597430a8be61f4d92366856e599db86095c2aa2c8",
+    "matrixchat-2.11.6-rc.1-linux-x64.tar.gz": "af09ee69b65d520c33a3fcf17b0c1ac6776b96be2f4a3e85aa0a33ad52873738",
+    "matrixchat-2.11.6-rc.1-macos-adhoc.zip": "3b402b200216f97c9fcbd40ee2b729cae4492061aaa7ca39d4763a61e80e0545",
+    "matrixchat-2.11.6-rc.1-web.tar.gz": "5a359efc7730da1b141aa3b15f31ad4d220d725111e24ba7be1c15c63c994cc3",
+    "matrixchat-2.11.6-rc.1-windows-x64-portable.zip": "5b26cb2cf5d0d6712a937132ca5e374c5f515703afdf44a0d07707fb6720e122",
+    "matrixchat-dart.cdx.json": "a73195981bc510d9d444ca4223d69d3a0572095ed10a5b60aeb1f889fb7e8ec0"
+  }
+}
