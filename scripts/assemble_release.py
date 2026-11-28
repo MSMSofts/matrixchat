@@ -80,15 +80,18 @@ def main():
     require({p.name for p in incoming.iterdir()} == expected, "Missing or unexpected platform artifacts")
     output.mkdir(parents=True, exist_ok=False)
     inventory = []
-    license_digest = None
+    canonical_license = (evidence / "LICENSE").read_bytes()
+    require(bool(canonical_license), "Missing source license")
+    shutil.copyfile(evidence / "LICENSE", output / "LICENSE")
+    normalized_license = canonical_license.replace(b"\r\n", b"\n")
     for name, (target, binary, signing) in TARGETS.items():
         folder = incoming / ("matrixchat-" + name + "-" + commit)
         meta = verify_artifact(folder, commit, target, binary)
-        digest = sha(folder / "LICENSE")
-        if license_digest is None:
-            license_digest = digest
-            shutil.copyfile(folder / "LICENSE", output / "LICENSE")
-        require(digest == license_digest, "License mismatch between builds")
+        # Git checkout on Windows can convert LF to CRLF. Each original
+        # artifact has already passed byte-exact SHA-256 verification.
+        # Compare only newline-normalized license bytes to the source blob.
+        require((folder / "LICENSE").read_bytes().replace(b"\r\n", b"\n") == normalized_license,
+                "License text differs from source: " + name)
         # Give each package a stable, versioned filename without altering its bytes.
         filename = binary.replace("matrixchat-", "matrixchat-" + version + "-", 1)
         shutil.copyfile(folder / binary, output / filename)

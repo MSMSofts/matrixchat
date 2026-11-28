@@ -4,6 +4,8 @@ on:
     branches: [security-hardening]
     paths:
       - 'release/candidate.json'
+      - 'scripts/assemble_release.py'
+      - '.github/workflows/matrixchat-draft-release.yaml'
   workflow_dispatch:
 
 permissions:
@@ -40,6 +42,7 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$build" > evidence/build.json
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$security" > evidence/security.json
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$pr" > evidence/pr.json
+          gh api -H "Accept: application/vnd.github.raw+json" "repos/$GITHUB_REPOSITORY/contents/LICENSE?ref=$sha" > evidence/LICENSE
           gh run download "$build" --repo "$GITHUB_REPOSITORY" --pattern "matrixchat-*-$sha" --dir incoming
           gh run download "$security" --repo "$GITHUB_REPOSITORY" --name dart-dependency-inventory --dir evidence/sbom
       - name: Validate artifact contents and assemble versioned release

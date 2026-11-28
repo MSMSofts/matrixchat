@@ -48,3 +48,5 @@ after publication; issue a new version for corrections. Verify downloaded
 files against SHA256SUMS and review RELEASE.json for exact source and status.
 Retain licensing/attribution, link the corresponding source, and include
 known limitations and upgrade notes. Never mark a prerelease as latest.
+
+The assembler checks each original artifact's exact SHA-256 before comparing its LICENSE to the exact source commit's license. Only CRLF-to-LF normalization is permitted in license comparison; any other content difference fails. The release includes the canonical source license and hashes the final payload again.
