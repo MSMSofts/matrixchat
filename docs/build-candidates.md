@@ -43,3 +43,5 @@ The first run produced Windows x64, Linux x64, macOS and web artifacts. Android 
 
 ## Independent Windows installer
 The next candidate build adds an unsigned per-user Inno Setup installer alongside the portable ZIP. Its installer identity and fixed install directory are distinct from FluffyChat. It does not erase the existing upstream installation directory. The native executable name and several storage namespaces are preserved pending migration testing, so use a separate Windows user profile and disposable accounts. Set `windows_installer: true` in the next candidate assembly plan only after all seven platform jobs pass. The published RC.1 is not changed.
+
+The candidate pipeline also checks the stable-version comparison regression test. The next build must pass formatting, analysis and all focused tests before any platform artifacts are produced.

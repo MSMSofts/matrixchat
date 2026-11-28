@@ -59,13 +59,15 @@ jobs:
 
   draft:
     needs: assemble
-    # Owner opt-in is required; the previous Actions identity received HTTP 403.
-    # This variable does not grant permissions or bypass organization policies.
+    # The owner must explicitly authorize the protected release environment.
+    # The prior Actions identity received HTTP 403; never retry with that token.
+    # The opt-in variable itself does not grant GitHub permissions.
     if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening' && vars.MATRIXCHAT_ENABLE_DRAFT_RELEASE == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    environment: matrixchat-release-registration
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -76,5 +78,9 @@ jobs:
           path: release-dist/
       - name: Create draft prerelease only
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/register_release.py release-dist --create-draft
+          GH_TOKEN: ${{ secrets.MATRIXCHAT_RELEASE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${GH_TOKEN:?Configure the authorized environment release credential}"
+          python3 scripts/register_release.py release-dist --create-draft

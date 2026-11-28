@@ -67,8 +67,7 @@ abstract class UpdateNotifier {
       final tag = release['tag_name'] as String;
       if (!tag.startsWith('v')) return;
       latestVersion = tag.substring(1);
-      final assets = (release['assets'] as List)
-          .cast<Map<String, Object?>>();
+      final assets = (release['assets'] as List).cast<Map<String, Object?>>();
       final hasInstaller = assets.any(
         (asset) =>
             asset['name'] == 'matrixchat-$latestVersion-windows-x64-setup.exe',

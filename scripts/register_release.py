@@ -85,7 +85,21 @@ def register(root):
                     "--repo", REPO, "--target", commit, "--title", "MatrixChat " + manifest["version"],
                     "--notes-file", str((root / "RELEASE_NOTES.md").resolve()),
                     "--draft", "--prerelease", "--latest=false"], check=True)
-    print("Draft created; inspect its assets and status before any publication.")
+    # Verify the draft via the authenticated REST API, including uploaded
+    # asset digests. A partial upload or metadata mismatch is a failed job.
+    pages = json.loads(gh("api", "repos/" + REPO + "/releases", "--paginate", "--slurp"))
+    matches = [release for page in pages for release in page if release["tag_name"] == tag]
+    require(len(matches) == 1, "Cannot identify the created draft")
+    release = matches[0]
+    require(release["draft"] is True and release["prerelease"] is True, "Unexpected release status")
+    require(release["target_commitish"] == commit, "Draft target commit mismatch")
+    expected = {p.name: (p.stat().st_size, "sha256:" + sha(p)) for p in files}
+    actual = {}
+    for asset in release["assets"]:
+        require(asset["name"] not in actual and asset["state"] == "uploaded", "Invalid remote asset")
+        actual[asset["name"]] = (asset["size"], asset.get("digest"))
+    require(actual == expected, "Draft assets differ from verified payload")
+    print("Draft created and all uploaded asset digests verified; owner review remains required.")
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

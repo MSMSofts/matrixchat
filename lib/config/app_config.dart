@@ -36,15 +36,14 @@ abstract class AppConfig {
   static const String windowsNotificationGuid =
       '4894dfda-c70a-4ebc-b139-acae55f3988d';
 
-  static const String sourceCodeUrl =
-      'https://github.com/MSMSofts/matrixchat';
+  static const String sourceCodeUrl = 'https://github.com/MSMSofts/matrixchat';
   static const String supportUrl =
       'https://github.com/MSMSofts/matrixchat/issues';
-  static const String changelogUrl = 'https://github.com/MSMSofts/matrixchat/releases';
+  static const String changelogUrl =
+      'https://github.com/MSMSofts/matrixchat/releases';
   static const String latestReleaseApiUrl =
       'https://api.github.com/repos/MSMSofts/matrixchat/releases/latest';
-  static const String helpUrl =
-      'https://github.com/MSMSofts/matrixchat';
+  static const String helpUrl = 'https://github.com/MSMSofts/matrixchat';
 
   static const Set<String> defaultReactions = {'👍', '❤️', '😂', '😮', '😢'};
 
