@@ -39,6 +39,10 @@ def verify(root):
     require(re.fullmatch(r"[a-f0-9]{40}", commit) is not None, "Invalid source commit")
     require(manifest["project"] == "MatrixChat" and manifest["channel"] == "candidate" and manifest["production_approved"] is False, "Only non-production MatrixChat RCs are supported")
     expected = {target: "matrixchat-" + version + "-" + suffix for target, suffix in PACKAGES.items()}
+    installer_enabled = manifest.get("windows_installer", False)
+    require(type(installer_enabled) is bool, "Invalid installer flag")
+    if installer_enabled:
+        expected["windows-x64-installer"] = "matrixchat-" + version + "-windows-x64-setup.exe"
     names = set(expected.values()) | METADATA
     require({p.name for p in files} == names | {"SHA256SUMS"}, "Unexpected or missing payload files")
     checks = {}
@@ -57,9 +61,10 @@ def verify(root):
         target = item["target"]
         require(target in expected and item["file"] == expected.pop(target), "Wrong or duplicate platform package")
         require(item["sha256"] == checks[item["file"]] and item["bytes"] == (root / item["file"]).stat().st_size, "Manifest mismatch")
-        require(item["build"]["commit"] == commit and item["build"]["production_approved"] is False, "Wrong build source")
+        build_target = "windows-x64" if target == "windows-x64-installer" else target
+        require(item["build"]["commit"] == commit and item["build"]["production_approved"] is False and item["build"]["target"] == build_target, "Wrong build source")
     require(not expected, "Missing platforms")
-    print("Verified seven platform packages, metadata and checksums for " + version)
+    print(f"Verified seven platforms, {len(inventory)} binaries, metadata and checksums for {version}")
     return manifest, sorted(files)
 
 def gh(*args):

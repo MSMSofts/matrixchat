@@ -37,8 +37,8 @@ def verify_run(run, run_id, commit, name, require_success=True):
     if require_success:
         require(run["conclusion"] == "success", name + " did not pass")
 
-def verify_artifact(folder, commit, target, binary):
-    expected = {binary, "LICENSE", "BUILD.json", "SHA256SUMS"}
+def verify_artifact(folder, commit, target, binary, extras=()):
+    expected = {binary, "LICENSE", "BUILD.json", "SHA256SUMS", *extras}
     require(folder.is_dir(), "Missing artifact: " + folder.name)
     files = list(folder.iterdir())
     require(all(p.is_file() and not p.is_symlink() for p in files), "Unexpected artifact entries")
@@ -57,7 +57,7 @@ def verify_artifact(folder, commit, target, binary):
     require(meta["commit"] == commit and meta["target"] == target, "Wrong artifact source or target")
     require(meta["production_approved"] is False, "Unexpected approval status")
     require(meta["source"] == "https://github.com/MSMSofts/matrixchat/tree/" + commit, "Wrong source URL")
-    require((folder / binary).stat().st_size > 0, "Empty artifact")
+    require(all((folder / name).stat().st_size > 0 for name in (binary, *extras)), "Empty artifact")
     return meta
 
 def main():
@@ -67,6 +67,8 @@ def main():
     output = Path(sys.argv[4])
     commit = plan["source_commit"]
     version = plan["version"]
+    installer_enabled = plan.get("windows_installer", False)
+    require(type(installer_enabled) is bool, "Invalid installer plan")
     require(re.fullmatch(r"[0-9a-f]{40}", commit) is not None, "Invalid commit")
     require(re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-rc\.[1-9][0-9]*", version) is not None, "Invalid RC version")
     require(plan["channel"] == "candidate", "Stable releases not supported by this workflow")
@@ -86,7 +88,8 @@ def main():
     normalized_license = canonical_license.replace(b"\r\n", b"\n")
     for name, (target, binary, signing) in TARGETS.items():
         folder = incoming / ("matrixchat-" + name + "-" + commit)
-        meta = verify_artifact(folder, commit, target, binary)
+        extras = ("matrixchat-windows-x64-setup.exe",) if installer_enabled and name == "windows-x64" else ()
+        meta = verify_artifact(folder, commit, target, binary, extras)
         # Git checkout on Windows can convert LF to CRLF. Each original
         # artifact has already passed byte-exact SHA-256 verification.
         # Compare only newline-normalized license bytes to the source blob.
@@ -97,6 +100,14 @@ def main():
         shutil.copyfile(folder / binary, output / filename)
         inventory.append({"target": target, "file": filename, "bytes": (output / filename).stat().st_size,
                           "sha256": sha(output / filename), "signing": signing, "build": meta})
+        for extra in extras:
+            setup_name = extra.replace("matrixchat-", "matrixchat-" + version + "-", 1)
+            shutil.copyfile(folder / extra, output / setup_name)
+            inventory.append({"target": "windows-x64-installer", "file": setup_name,
+                              "bytes": (output / setup_name).stat().st_size,
+                              "sha256": sha(output / setup_name),
+                              "signing": "Unsigned per-user candidate installer; isolated installation directory, not an isolated profile",
+                              "build": meta})
     sbom = evidence / "sbom" / "matrixchat-dart.cdx.json"
     sbom_data = load(sbom)
     require(sbom_data.get("bomFormat") == "CycloneDX" and sbom_data.get("components"), "Missing Dart SBOM")
@@ -107,6 +118,8 @@ def main():
                 "build_run": build["html_url"], "security_run": security["html_url"],
                 "pull_request_run": pr["html_url"], "pull_request_result": pr["conclusion"],
                 "artifacts": inventory, "sbom_scope": "Dart dependencies only"}
+    if installer_enabled:
+        manifest["windows_installer"] = True
     (output / "RELEASE.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     notes = [
         "# MatrixChat " + version,

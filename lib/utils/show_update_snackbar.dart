@@ -19,11 +19,23 @@ import 'package:url_launcher/url_launcher_string.dart';
 abstract class UpdateNotifier {
   static const String versionStoreKey = 'last_known_version';
   static const String dismissedUpdateStoreKey = 'dismissed_update_version';
-  static const String _windowsInstallerAssetName =
-      'fluffychat-windows-x64-setup.exe';
+  static const String _releasePage =
+      'https://github.com/MSMSofts/matrixchat/releases';
+
+  static bool isNewerStableVersion(String candidate, String current) {
+    final pattern = RegExp(r'^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$');
+    if (!pattern.hasMatch(candidate) || !pattern.hasMatch(current)) return false;
+    final a = candidate.split('.').map(int.parse).toList();
+    final b = current.split('.').map(int.parse).toList();
+    for (var i = 0; i < 3; i++) {
+      if (a[i] != b[i]) return a[i] > b[i];
+    }
+    return false;
+  }
 
   /// Checks GitHub for a newer release with a Windows installer and
-  /// displays a banner with a download link. Only for Windows, as all other
+  /// displays a banner linking to the official release page, not an executable.
+  /// Only for Windows, as all other
   /// platforms get updated by their store or package manager.
   static Future<void> showUpdateAvailableBanner(BuildContext context) async {
     if (!PlatformInfos.isWindows || !AppSettings.checkForUpdates.value) return;
@@ -37,7 +49,6 @@ abstract class UpdateNotifier {
     await AppSettings.lastUpdateCheckDate.setItem(today);
 
     final String latestVersion;
-    final String downloadUrl;
     try {
       final response = await http.get(
         Uri.parse(AppConfig.latestReleaseApiUrl),
@@ -45,21 +56,24 @@ abstract class UpdateNotifier {
       );
       if (response.statusCode != 200) return;
       final release = jsonDecode(response.body) as Map<String, Object?>;
-      latestVersion = (release['tag_name'] as String).replaceFirst(
-        RegExp('^v'),
-        '',
+      if (release['draft'] != false || release['prerelease'] != false) return;
+      final tag = release['tag_name'] as String;
+      if (!tag.startsWith('v')) return;
+      latestVersion = tag.substring(1);
+      final assets = (release['assets'] as List)
+          .cast<Map<String, Object?>>();
+      final hasInstaller = assets.any(
+        (asset) =>
+            asset['name'] == 'matrixchat-$latestVersion-windows-x64-setup.exe',
       );
-      final installer = (release['assets'] as List)
-          .cast<Map<String, Object?>>()
-          .firstWhere((asset) => asset['name'] == _windowsInstallerAssetName);
-      downloadUrl = installer['browser_download_url'] as String;
-    } catch (e, s) {
-      Logs().w('Unable to check for updates', e, s);
+      if (!hasInstaller) return;
+    } catch (_) {
+      Logs().w('Unable to check for MatrixChat updates');
       return;
     }
 
     final currentVersion = await PlatformInfos.getVersion();
-    if (latestVersion == currentVersion) return;
+    if (!isNewerStableVersion(latestVersion, currentVersion)) return;
 
     final store = await SharedPreferences.getInstance();
     if (store.getString(dismissedUpdateStoreKey) == latestVersion) return;
@@ -78,7 +92,7 @@ abstract class UpdateNotifier {
           ),
           TextButton(
             onPressed: () {
-              launchUrlString(downloadUrl);
+              launchUrlString(_releasePage);
               scaffoldMessenger.hideCurrentMaterialBanner();
             },
             child: Text(l10n.download),

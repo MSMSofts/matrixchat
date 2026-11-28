@@ -62,3 +62,6 @@ python3 scripts/register_release.py release-dist --create-draft
 ```
 
 The script validates every expected file, hash, platform and source commit, checks the remote commit and rejects an existing release or tag. It creates a draft prerelease only. It never changes permissions, accepts credentials in command-line arguments, publishes a stable version, or overwrites release assets. If GitHub denies access, stop and contact the repository administrator. The maintainer may alternatively use the GitHub Releases UI to create the draft and attach the verified payload.
+
+## Candidate installer and update channel
+Future candidate plans may explicitly set `windows_installer: true`, adding an eighth binary to the seven-platform payload. Both assembler and registration verifier require its checksum and manifest entry. The RC.1 payload remains supported and unchanged. The application update notifier uses only the MatrixChat repository, rejects prerelease/draft, same, older and non-stable versions, and opens the official release page instead of trusting an arbitrary binary URL. It remains disabled by default; signing and migration are required before production updates.
