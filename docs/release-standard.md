@@ -50,3 +50,15 @@ Retain licensing/attribution, link the corresponding source, and include
 known limitations and upgrade notes. Never mark a prerelease as latest.
 
 The assembler checks each original artifact's exact SHA-256 before comparing its LICENSE to the exact source commit's license. Only CRLF-to-LF normalization is permitted in license comparison; any other content difference fails. The release includes the canonical source license and hashes the final payload again.
+
+## Registration and authorization
+The verified candidate payload for v2.11.6-rc.1 was assembled in run 46092187922, artifact 15241234274. All SHA-256 checks passed; the subsequent GitHub release creation returned HTTP 403. No release was created. Automatic registration is now opt-in via the repository variable `MATRIXCHAT_ENABLE_DRAFT_RELEASE=true`, after a maintainer confirms the Actions identity is actually authorized to create draft releases under repository and organization policies. The variable itself grants no access. Assembly remains read-only and succeeds independently.
+
+An authorized maintainer can register the same validated package from a checkout of this branch using their existing GitHub CLI credentials. Download and extract the verified artifact into `release-dist`, then run:
+
+```sh
+python3 scripts/register_release.py release-dist
+python3 scripts/register_release.py release-dist --create-draft
+```
+
+The script validates every expected file, hash, platform and source commit, checks the remote commit and rejects an existing release or tag. It creates a draft prerelease only. It never changes permissions, accepts credentials in command-line arguments, publishes a stable version, or overwrites release assets. If GitHub denies access, stop and contact the repository administrator. The maintainer may alternatively use the GitHub Releases UI to create the draft and attach the verified payload.
