@@ -1888,7 +1888,6 @@
     "jump": "Hüppa",
     "openLinkInBrowser": "Ava link veebibrauseris",
     "report": "teata",
-    "reportErrorDescription": "😭 Vaat kus lops! Midagi läks valesti. Kui soovid, võid sellest veast arendajatele teatada.",
     "importFromZipFile": "Impordi zip-failist",
     "exportEmotePack": "Ekspordi emotikonide pakk zip-failina",
     "replace": "Asenda",
@@ -2121,7 +2120,6 @@
         }
     },
     "publicChatAddresses": "Vestluse avalik aadress",
-    "noDatabaseEncryption": "Andmebaasi krüptimine pole sellel platvormil toetatud",
     "knock": "Koputa uksele",
     "appLockDescription": "Kui sa rakendust parasjagu ei kasuta, siis lukusta ta PIN-koodiga",
     "accessAndVisibility": "Hõlbustus, ligipääsetavus ja nähtavus",
@@ -2769,8 +2767,6 @@
         }
     },
     "compressingVideo": "Pakime videot väiksemaks...",
-    "shareCrashReports": "Jaga krahhilogisid",
-    "shareCrashReportsDescription": "Kas jagad rakenduse kokkujooksmise aruandeid automaatselt arendajatega?",
     "countActiveCallMembers": "Pooleliolevas kõnes on {count} osalejat",
     "@countActiveCallMembers": {
         "placeholders": {

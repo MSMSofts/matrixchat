@@ -1,0 +1,86 @@
+name: MatrixChat Draft Release
+on:
+  push:
+    branches: [security-hardening]
+    paths:
+      - 'release/candidate.json'
+      - 'scripts/assemble_release.py'
+      - 'scripts/register_release.py'
+      - '.github/workflows/matrixchat-draft-release.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: matrixchat-draft-release
+  cancel-in-progress: false
+
+jobs:
+  assemble:
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Fetch evidence and exact artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence incoming
+          build=$(jq -er '.build_run | numbers' release/candidate.json)
+          security=$(jq -er '.security_run | numbers' release/candidate.json)
+          pr=$(jq -er '.pull_request_run | numbers' release/candidate.json)
+          sha=$(jq -er '.source_commit | strings' release/candidate.json)
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$build" > evidence/build.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$security" > evidence/security.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$pr" > evidence/pr.json
+          gh api -H "Accept: application/vnd.github.raw+json" "repos/$GITHUB_REPOSITORY/contents/LICENSE?ref=$sha" > evidence/LICENSE
+          gh run download "$build" --repo "$GITHUB_REPOSITORY" --pattern "matrixchat-*-$sha" --dir incoming
+          gh run download "$security" --repo "$GITHUB_REPOSITORY" --name dart-dependency-inventory --dir evidence/sbom
+      - name: Validate artifact contents and assemble versioned release
+        run: |
+          python3 scripts/assemble_release.py release/candidate.json evidence incoming release-dist
+          python3 scripts/register_release.py release-dist
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-verified-release-payload
+          path: release-dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  draft:
+    needs: assemble
+    # The owner must explicitly authorize the protected release environment.
+    # The prior Actions identity received HTTP 403; never retry with that token.
+    # The opt-in variable itself does not grant GitHub permissions.
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening' && vars.MATRIXCHAT_ENABLE_DRAFT_RELEASE == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: matrixchat-release-registration
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: matrixchat-verified-release-payload
+          path: release-dist/
+      - name: Create draft prerelease only
+        env:
+          GH_TOKEN: ${{ secrets.MATRIXCHAT_RELEASE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${GH_TOKEN:?Configure the authorized environment release credential}"
+          python3 scripts/register_release.py release-dist --create-draft

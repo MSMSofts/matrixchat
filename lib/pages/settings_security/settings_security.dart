@@ -5,6 +5,8 @@
 
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/security/security_policy.dart';
+import 'package:fluffychat/security/security_presets.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_ok_cancel_alert_dialog.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/show_text_input_dialog.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
@@ -25,7 +27,7 @@ class SettingsSecurity extends StatefulWidget {
 
 class SettingsSecurityController extends State<SettingsSecurity> {
   Future<void> toggleBiometrics() async {
-    AppLock.of(context).showLockScreen();
+    if (!await _confirmCurrentPin() || !mounted) return;
 
     final oldState = AppLock.of(context).useBiometrics;
     final actionStr = oldState
@@ -52,11 +54,11 @@ class SettingsSecurityController extends State<SettingsSecurity> {
       if (!mounted) return;
     }
     await AppLock.of(context).changeUseBiometrics(!oldState);
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<void> disableAppLockAction() async {
-    AppLock.of(context).showLockScreen();
+    if (!await _confirmCurrentPin() || !mounted) return;
     final consent = await showOkCancelAlertDialog(
       context: context,
       title: L10n.of(context).disableAppLock,
@@ -73,12 +75,8 @@ class SettingsSecurityController extends State<SettingsSecurity> {
   }
 
   Future<void> setAppLockAction() async {
-    await AppLock.of(context).changeUseBiometrics(false);
-    if (!mounted) return;
+    if (!await _confirmCurrentPin() || !mounted) return;
     final l10n = L10n.of(context);
-    if (AppLock.of(context).isActive) {
-      AppLock.of(context).showLockScreen();
-    }
     final newLock = await showTextInputDialog(
       useRootNavigator: false,
       context: context,
@@ -86,9 +84,7 @@ class SettingsSecurityController extends State<SettingsSecurity> {
       message: l10n.pleaseEnter6Digits,
       cancelLabel: l10n.cancel,
       validator: (text) {
-        if (text.length == 6 && int.tryParse(text)! >= 0) {
-          return null;
-        }
+        if (RegExp(r'^\d{6}$').hasMatch(text)) return null;
         return l10n.pleaseEnter6Digits;
       },
       keyboardType: TextInputType.number,
@@ -97,11 +93,34 @@ class SettingsSecurityController extends State<SettingsSecurity> {
       minLines: 1,
       maxLength: 6,
     );
-    if (newLock != null) {
-      if (!mounted) return;
-      await AppLock.of(context).changePincode(newLock);
-      setState(() {});
-    }
+    if (newLock == null || !mounted) return;
+    final appLock = AppLock.of(context);
+    await appLock.changePincode(newLock);
+    await appLock.changeUseBiometrics(false);
+    if (mounted) setState(() {});
+  }
+
+  /// Confirm the existing PIN before changing security-sensitive settings.
+  Future<bool> _confirmCurrentPin() async {
+    final lock = AppLock.of(context);
+    if (!lock.hasPincode) return true;
+    final l10n = L10n.of(context);
+    final pin = await showTextInputDialog(
+      useRootNavigator: false,
+      context: context,
+      title: l10n.pleaseEnterYourPin,
+      cancelLabel: l10n.cancel,
+      keyboardType: TextInputType.number,
+      obscureText: true,
+      maxLines: 1,
+      minLines: 1,
+      maxLength: 6,
+    );
+    if (pin == null || !mounted || lock.isLocked) return false;
+    if (await lock.verifyCurrentPin(pin)) return mounted && !lock.isLocked;
+    if (!mounted) return false;
+    lock.showLockScreen();
+    return false;
   }
 
   Future<void> deleteAccountAction() async {
@@ -154,10 +173,77 @@ class SettingsSecurityController extends State<SettingsSecurity> {
 
   Future<void> dehydrateAction() => Matrix.of(context).dehydrateAction(context);
 
+  bool _applyingPreset = false;
+
+  Future<void> applySecurityPreset(SecurityPreset preset) async {
+    if (_applyingPreset) return;
+    final persian = Localizations.localeOf(context).languageCode == 'fa';
+    final consent = await showOkCancelAlertDialog(
+      context: context,
+      title: persian ? 'اعمال تنظیمات امنیتی' : 'Apply security settings',
+      message: persian
+          ? 'تنظیمات فعلی حریم خصوصی و ارسال تغییر می‌کنند. برای اعمال همه تغییرات برنامه را دوباره اجرا کنید.'
+          : 'Current privacy and send settings will change. Restart the app to apply every change.',
+    );
+    if (!mounted || consent != OkCancelResult.ok || _applyingPreset) return;
+    final clients = Matrix.of(context).securityPolicyClients;
+    _applyingPreset = true;
+    try {
+      // Tighten running clients before changing persistent preferences.
+      for (final client in clients) {
+        client.shareKeysWith = ShareKeysWith.verifiedOnly;
+      }
+      await preset.apply();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            persian ? 'تنظیمات اعمال شد.' : 'Security settings applied.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            persian
+                ? 'اعمال کامل ناموفق بود. تنظیمات را بررسی کنید.'
+                : 'Some settings may not have been saved. Review them.',
+          ),
+        ),
+      );
+    } finally {
+      _applyingPreset = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> changeVerifiedIdentityMode(bool required) async {
+    if (_applyingPreset) return;
+    if (!required && !await _confirmCurrentPin()) return;
+    if (!mounted) return;
+    final clients = Matrix.of(context).securityPolicyClients;
+    // Never leave an existing client with a looser SDK policy in strict mode.
+    for (final client in clients) {
+      client.shareKeysWith = ShareKeysWith.verifiedOnly;
+    }
+    await AppSettings.shareKeysWith.setItem(ShareKeysWith.verifiedOnly.name);
+    await AppSettings.requireVerifiedIdentities.setItem(required);
+    if (mounted) setState(() {});
+  }
+
   Future<void> changeShareKeysWith(ShareKeysWith? shareKeysWith) async {
-    if (shareKeysWith == null) return;
-    AppSettings.shareKeysWith.setItem(shareKeysWith.name);
-    Matrix.of(context).client.shareKeysWith = shareKeysWith;
+    if (shareKeysWith == null ||
+        !SecurityPolicy.allowedKeySharing.contains(shareKeysWith) ||
+        AppSettings.requireVerifiedIdentities.value) {
+      return;
+    }
+    await AppSettings.shareKeysWith.setItem(shareKeysWith.name);
+    if (!mounted) return;
+    for (final client in Matrix.of(context).securityPolicyClients) {
+      client.shareKeysWith = shareKeysWith;
+    }
     setState(() {});
   }
 

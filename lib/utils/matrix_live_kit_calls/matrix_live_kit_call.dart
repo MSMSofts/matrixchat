@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:fluffychat/config/setting_keys.dart';
+import 'package:fluffychat/security/rtc_security.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/call_keys_event_content.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/matrix_live_kit_call_member.dart';
 import 'package:matrix/matrix.dart' hide Result;
@@ -54,7 +55,11 @@ extension MatrixRtcClientExtension on Client {
   }
 
   Stream<CallKeysEvent> get onCallEncryptionKeys => onToDeviceEvent.stream
-      .where((event) => event.type == CallKeysEventContent.eventType)
+      .where(
+        (event) =>
+            event.type == CallKeysEventContent.eventType &&
+            event.encryptedContent != null,
+      )
       .map(CallKeysEvent.fromToDeviceEvent);
 }
 
@@ -271,7 +276,20 @@ extension MatrixRtcRoomExtension on Room {
       urls.addAll(await client.getLiveKitServiceUrls());
     }
 
-    Logs().v('Available SFUs', urls);
+    urls = urls
+        .where((url) {
+          final uri = Uri.tryParse(url);
+          return uri != null && RtcSecurity.permitsFocus(uri);
+        })
+        .toSet()
+        .toList();
+    if (AppSettings.requireVerifiedIdentities.value) {
+      // Do not send an OpenID token to an arbitrary room-advertised focus
+      // when strict identity mode is enabled. Restrict to the homeserver's
+      // advertised/configured RTC services.
+      final configured = (await client.getLiveKitServiceUrls()).toSet();
+      urls = urls.where(configured.contains).toList();
+    }
     if (urls.isEmpty) {
       throw Exception('This server does not support livekit calls!');
     }
@@ -309,11 +327,12 @@ extension MatrixRtcRoomExtension on Room {
 
     for (final url in urls) {
       try {
-        Logs().d(
-          '[Join MatrixRtc Call] (4/5) Try authenticate to LiveKit instance $url...',
+        final focus = Uri.parse(url);
+        final endpoint = focus.replace(
+          path: '${focus.path.replaceAll(RegExp(r'/+$'), '')}/sfu/get',
         );
         final response = await client.httpClient.post(
-          Uri.parse('${url.replaceAll(RegExp(r'/+$'), '')}/sfu/get'),
+          endpoint,
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'room': id,
@@ -322,22 +341,23 @@ extension MatrixRtcRoomExtension on Room {
           }),
         );
         if (response.statusCode != 200) {
-          throw Exception(response.reasonPhrase ?? response.body);
+          throw StateError('RTC authorization failed.');
         }
         final json =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, Object?>;
-        Logs().d('Use SFU', url);
-        return MatrixRtcCredentials.fromJson(json);
-      } catch (e) {
-        Logs().v(
-          '[Join MatrixRtc Call] (4/4) Unable to authenticate to $url',
-          e,
-        );
+        final credentials = MatrixRtcCredentials.fromJson(json);
+        final mediaEndpoint = Uri.tryParse(credentials.url);
+        if (mediaEndpoint == null ||
+            !RtcSecurity.permitsMediaEndpoint(mediaEndpoint) ||
+            credentials.jwt.isEmpty) {
+          throw StateError('Invalid secure RTC endpoint.');
+        }
+        return credentials;
+      } catch (_) {
+        Logs().w('Unable to authenticate to RTC service.');
       }
     }
-    throw Exception(
-      'Unable to authenticate to any of the visible LiveKit instances!\nSFU list: $urls\nActive Call: $hasActiveMatrixRtcCall',
-    );
+    throw StateError('Unable to authenticate to an RTC service.');
   }
 
   Future<void> leaveMatrixRtcCall() async {

@@ -1,0 +1,9 @@
+{
+  "version": "2.11.6-rc.1",
+  "source_commit": "7503752f99131b6eca5f38931674c3cc951eb8c6",
+  "build_run": 46057774086,
+  "security_run": 46057779816,
+  "pull_request_run": 46057779787,
+  "app_version": "2.11.6+3580",
+  "channel": "candidate"
+}

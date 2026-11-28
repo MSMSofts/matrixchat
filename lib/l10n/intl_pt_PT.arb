@@ -1400,7 +1400,6 @@
             }
         }
     },
-    "reportErrorDescription": "😭 Oh não. Ocorreu um problema. Se quiser, pode comunicar este erro aos desenvolvedores.",
     "@youAreNoLongerParticipatingInThisChat": {
         "type": "String",
         "placeholders": {}

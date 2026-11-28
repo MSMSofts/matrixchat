@@ -2058,7 +2058,6 @@
     "readUpToHere": "Read up to here",
     "jump": "Jump",
     "openLinkInBrowser": "Open link in browser",
-    "reportErrorDescription": "😭 Oh no. Something went wrong. If you want, you can report this bug to the developers.",
     "report": "report",
     "setColorTheme": "Set color theme:",
     "invite": "Invite",
@@ -2243,7 +2242,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Database encryption is not supported on this platform",
     "thereAreCountUsersBlocked": "Right now there are {count} users blocked.",
     "@thereAreCountUsersBlocked": {
         "type": "String",
@@ -2770,8 +2768,6 @@
     "doubleTapToReact": "Double-tap to react",
     "doubleTapToReactDescription": "Double-tap a message to react instead of selecting text",
     "doubleTapReaction": "Double-tap reaction",
-    "shareCrashReports": "Share crash reports",
-    "shareCrashReportsDescription": "Automatically share crash reports with the developers?",
     "countActiveCallMembers": "{count} active call members",
     "@countActiveCallMembers": {
         "placeholders": {

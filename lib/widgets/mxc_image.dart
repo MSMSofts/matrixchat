@@ -38,6 +38,8 @@ class MxcImage extends StatefulWidget {
   static void clearCache(String cacheName) =>
       _MxcImageState._imageDataCaches.remove(cacheName);
 
+  static void clearAllCaches() => _MxcImageState._imageDataCaches.clear();
+
   const MxcImage({
     this.uri,
     this.event,
@@ -69,14 +71,14 @@ class _MxcImageState extends State<MxcImage> {
 
   Uint8List? _imageDataNoCache;
 
-  Uint8List? get _imageData => widget.cacheKey == null
+  Uint8List? get _imageData => widget.event != null || widget.cacheKey == null
       ? _imageDataNoCache
       : _imageDataCache[widget.cacheKey];
 
   set _imageData(Uint8List? data) {
     if (data == null) return;
     final cacheKey = widget.cacheKey;
-    cacheKey == null
+    cacheKey == null || widget.event != null
         ? _imageDataNoCache = data
         : _imageDataCache[cacheKey] = data;
   }
@@ -152,6 +154,12 @@ class _MxcImageState extends State<MxcImage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryLoad());
+  }
+
+  @override
+  void dispose() {
+    _imageDataNoCache = null;
+    super.dispose();
   }
 
   @override

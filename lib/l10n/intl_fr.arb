@@ -2066,7 +2066,6 @@
         }
     },
     "stickers": "Autocollants",
-    "noDatabaseEncryption": "Le chiffrement de la base de données n'est pas supporté sur cette plateforme",
     "commandHint_ignore": "Ignorer l'identifiant Matrix indiqué",
     "commandHint_unignore": "Ne plus ignorer l'identifiant Matrix indiqué",
     "thereAreCountUsersBlocked": "Actuellement, il y a {count} utilisateurs/trices bloqués.",
@@ -2088,7 +2087,6 @@
     "databaseMigrationTitle": "La base de données est optimisée",
     "leaveEmptyToClearStatus": "Laisser vide pour effacer votre statut.",
     "select": "Sélectionner",
-    "reportErrorDescription": "😭 Oh non. Quelque chose s'est mal passé. Si vous le souhaitez, vous pouvez signaler ce bogue aux développeurs.",
     "report": "signaler",
     "wrongPinEntered": "Mauvais code PIN saisi ! Veuillez réessayer dans {seconds} secondes...",
     "@wrongPinEntered": {
@@ -2766,8 +2764,6 @@
         }
     },
     "compressingVideo": "Compression de la vidéo...",
-    "shareCrashReports": "Partager le rapport de crash",
-    "shareCrashReportsDescription": "Partage automatiquement les rapports de crash avec les developpeurs ?",
     "activeCall": "Appel actif",
     "countActiveCallMembers": "{count} membres actifs dans l'appel",
     "@countActiveCallMembers": {

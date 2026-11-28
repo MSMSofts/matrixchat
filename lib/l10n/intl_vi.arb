@@ -436,7 +436,6 @@
             }
         }
     },
-    "reportErrorDescription": "😭 Ôi. Có lỗi xảy ra. Bạn có thể báo cáo lỗi tới nhà phát triển nếu muốn.",
     "banUserDescription": "Người dùng sẽ bị cấm khỏi cuộc trò chuyện và không thể tham gia lại cho tới khi được gỡ cấm.",
     "learnMore": "Tìm hiểu thêm",
     "incomingMessages": "Tin nhắn đến",

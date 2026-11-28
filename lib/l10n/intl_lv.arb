@@ -60,7 +60,6 @@
         "type": "String",
         "placeholders": {}
     },
-    "reportErrorDescription": "😭 Ak nē! Kaut kas nogāja greizi. Ja ir vēlēšanas, par šo nepilnību var ziņot izstrādātājiem.",
     "directChats": "Tiešās tērzēšanas",
     "@directChats": {
         "type": "String",
@@ -2054,7 +2053,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Šajā platformā datubāzes šifrēšana netiek nodrošināta",
     "databaseMigrationBody": "Lūgums uzgaidīt. Tas var aizņemt kādu brīdi.",
     "passwordsDoNotMatch": "Paroles nesakrīt",
     "publicChatAddresses": "Publiskas tērzēšanas adreses",
@@ -2740,8 +2738,6 @@
     "doubleTapToReact": "Divkāršs piesitiens, lai atsauktos",
     "doubleTapToReactDescription": "Divkāršs piesitiens ziņai, lai atsauktos, nevis iezīmētu tekstu",
     "doubleTapReaction": "Atsaukšanās ar divkāršu piesišanu",
-    "shareCrashReports": "Kopīgot avāriju ziņojumus",
-    "shareCrashReportsDescription": "Automātiski kopīgot avāriju ziņojumus ar izstrādātājiem?",
     "shareCrashReportsPrompt": "Automātiski kopīgot avāriju ziņojumus ar izstrādātājiem? Vairāk par to, kādi dati tiek kopīgoti, var uzzināt {url}.",
     "@shareCrashReportsPrompt": {
         "placeholders": {

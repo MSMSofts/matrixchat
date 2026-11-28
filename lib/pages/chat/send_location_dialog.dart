@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:fluffychat/l10n/l10n.dart';
 import 'package:fluffychat/pages/chat/events/map_bubble.dart';
+import 'package:fluffychat/pages/chat/trust_user_key_dialog.dart';
 import 'package:fluffychat/widgets/adaptive_dialogs/adaptive_dialog_action.dart';
 import 'package:fluffychat/widgets/future_loading_dialog.dart';
 import 'package:geolocator/geolocator.dart';
@@ -77,6 +78,8 @@ class SendLocationDialogState extends State<SendLocationDialog> {
   }
 
   Future<void> sendAction() async {
+    final proceed = await showTrustUserInRoomDialog(context, widget.room);
+    if (!mounted || !proceed || position == null) return;
     setState(() => isSending = true);
     final body =
         'https://www.openstreetmap.org/?mlat=${position!.latitude}&mlon=${position!.longitude}#map=16/${position!.latitude}/${position!.longitude}';

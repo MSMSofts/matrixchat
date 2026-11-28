@@ -1867,7 +1867,6 @@
         }
     },
     "disableEncryptionWarning": "لأسباب أمنية ، لا يمكنك تعطيل التشفير في المحادثة ، حيث تم تمكينه من قبل.",
-    "reportErrorDescription": "😭 أوه لا. هناك خطأ ما. إذا كنت تريد، يمكنك الإبلاغ عن هذا الخطأ إلى المطورين.",
     "newSpaceDescription": "يسمح لك تطبيق المساحات بتوحيد دردشاتك وبناء مجتمعات خاصة أو عامة.",
     "sorryThatsNotPossible": "معذرة... هذا غير ممكن",
     "openLinkInBrowser": "فتح الرابط في المتصفح",
@@ -2093,7 +2092,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "تشفير قاعدة البيانات غير مدعوم على هذا النظام الأساسي",
     "appLockDescription": "قفل التطبيق عند عدم استخدامه بالرمز السري",
     "accessAndVisibility": "الوصول والرؤية",
     "customEmojisAndStickers": "الرموز التعبيرية والملصقات المخصصة",
@@ -2750,8 +2748,6 @@
     "selectCamera": "إختيار الكاميرا",
     "selectMicrophone": "إختيار الميكروفون",
     "incomingCall": "مكالمة واردة",
-    "shareCrashReports": "مشاركة تقارير الأعطال",
-    "shareCrashReportsDescription": "مشاركة تقارير الأعطال تلقائيًا مع المطورين؟",
     "countActiveCallMembers": "‏{count} أعضاء نشطون في المكالمة",
     "@countActiveCallMembers": {
         "placeholders": {

@@ -1884,7 +1884,6 @@
     "readUpToHere": "Buraya kadar oku",
     "jump": "Atla",
     "openLinkInBrowser": "Bağlantıyı tarayıcıda aç",
-    "reportErrorDescription": "😭 Olamaz. Bir şeyler yanlış gitti. İsterseniz bu hatayı geliştiricilere bildirebilirsiniz.",
     "report": "bildir",
     "notAnImage": "Bir resim dosyası değil.",
     "importNow": "Şimdi içe aktar",
@@ -2032,7 +2031,6 @@
     "nothingFound": "Hiçbir şey bulunamadı...",
     "sendReadReceiptsDescription": "Sohbetteki diğer katılımcılar bir mesajı okuduğunuzu görebilir.",
     "verifyOtherDeviceDescription": "Başka bir aygıtı doğruladığınızda, bu aygıtlar anahtarları değiş tokuş ederek genel güvenliğinizi artırır. 💪 Bir doğrulama başlattığınızda, her iki aygıttaki uygulamada bir açılır pencere görünecektir. Orada birbirleriyle karşılaştırmanız gereken bir dizi emoji veya sayı göreceksiniz. Doğrulamaya başlamadan önce her iki aygıtın da elinizin altında olması en iyisidir. 🤳",
-    "noDatabaseEncryption": "Veri tabanı şifrelemesi bu platformda desteklenmiyor",
     "thereAreCountUsersBlocked": "Şu anda {count} engellenen kullanıcı var.",
     "@thereAreCountUsersBlocked": {
         "type": "String",

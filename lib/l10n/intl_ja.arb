@@ -1991,7 +1991,6 @@
     "readUpToHere": "ここまで既読です",
     "jump": "移動",
     "openLinkInBrowser": "リンクをブラウザで開く",
-    "reportErrorDescription": "😭 おっと。問題が発生しました。必要があれば、このバグを開発者に報告することができます。",
     "setColorTheme": "カラーテーマの設定：",
     "invite": "招待",
     "inviteGroupChat": "📨 グループチャットへ招待する",

@@ -1,0 +1,26 @@
+name: MatrixChat Published Release Verification
+on:
+  push:
+    branches: [security-hardening]
+    paths:
+      - 'release/verified-rc1.json'
+      - 'scripts/verify_published_release.py'
+      - '.github/workflows/matrixchat-published-verification.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verify published release assets and exact bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/verify_published_release.py release/verified-rc1.json

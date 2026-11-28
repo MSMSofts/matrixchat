@@ -1,0 +1,120 @@
+<!--
+SPDX-FileCopyrightText: 2026 MatrixChat contributors
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+# MatrixChat security hardening — R1
+
+Status: implementation candidate, not independently audited. Do not ship or merge until tests and migration checks pass.
+
+## Implemented in this change
+- Native database startup requires a persisted key and SQLCipher availability; wrong keys, missing keys, and unencrypted legacy databases fail closed. No automatic deletion or plaintext conversion.
+- Existing legacy database locations are opened in place; conflicting database copies require operator review.
+- Existing permissive or invalid key-sharing settings resolve to verified-only. This is the SDK key-sharing policy, not proof of all outbound session key flows; verify those separately.
+- Private message notifications default on; regular message previews can be explicitly re-enabled. Incoming call presentation and other platform notification paths need separate review.
+- Reduced Matrix SDK logging, generic startup errors, removal of automatic/raw upstream error-reporting URLs, new-install privacy defaults.
+- Reject unknown push account names and path separators in database account names. Do not remove saved accounts during uninitialized background client creation.
+- Unit tests for key resolution, local account names, and trust policies.
+
+## Compatibility and recovery
+Back up encrypted databases and recovery keys before testing. Never clear application data to resolve a secure-startup error. Existing native plaintext databases are deliberately not auto-migrated. Design an authenticated, transactional export/import migration with integrity verification and recovery before upgrading such accounts. Existing explicit privacy preferences other than key sharing may remain. Web storage remains the upstream implementation; it is not covered by the native SQLCipher guarantee. Background isolates and simultaneous processes need concurrency tests, including first-launch key creation and keychain availability. Older notifications may remain visible.
+
+## Release gates
+1. Run dart format, flutter analyze, unit tests and the upstream integration tests with the pinned Flutter/Rust toolchain.
+2. On each native platform test first launch, multi-account startup, wrong/missing keys, keychain errors, legacy location, SQLCipher absence, crash/restart, and upgrade with a copy of existing encrypted data. Verify the database and key are unchanged on failure.
+3. Test verified/unverified devices, cross-signing, key requests, outgoing session-key distribution, membership change, recovery and interoperability with independent Matrix clients.
+4. Test notifications, call UI, existing notification history, lock screen and foreground/background transitions on actual devices.
+5. Scan dependencies and build artifacts, inspect logs and temporary files for secrets; test signed release packaging. No production security certification is implied.
+
+## Remaining work
+- Enforce E2EE send policy across all send paths; explicit trust/identity change handling, rotation policy and recovery testing.
+- Secure media cache and hardware-backed wrapping keys, app-lock lifecycle, backup policies and screen protection.
+- Network Guard including redirects, delegated homeservers, SSO, WebRTC and native plugins; independently verify RTC media E2EE.
+- Web storage threat model, secure hosting, CSP and service worker update policy.
+- Signed release process, dependency/secret scanning, SBOM, reproducible builds and independent penetration testing.
+- Security Center and privacy controls; MLS, post-quantum and key transparency only when interoperable standards and SDK support are established.
+
+Preserve compatibility with Matrix and upstream license notices. Do not introduce custom cryptographic protocols.
+
+## R2 implementation candidate
+- SDK HTTP guard rejects cleartext URLs and user-info; automatic HTTP redirects are disabled. Direct SDK requests are rechecked. This may block legitimate media redirects; verify Matrix authenticated media compatibility and design a safe redirect implementation before release. Local HTTP test servers require a debug-only explicit dart define, MATRIXCHAT_ALLOW_LOCAL_TEST_HTTP=true; production builds cannot enable it.
+- Optional encrypted-room and verified-identity settings guard the reviewed text, shared-content, attachment, voice, poll, location, and retry UI paths. The HTTP boundary additionally blocks listed plaintext timeline event types. This is not a complete SDK E2EE proof: media uploads, arbitrary event types, delegated auth, queued events, and unreviewed call/send paths require testing. Strict mode disables text slash commands and old notification quick replies. It can block delivery to unverified users and public rooms.
+- New drafts are not persisted to plaintext preferences by default. Existing drafts are loaded into the editor and their preference is removed on opening the room; unopened legacy drafts remain. Unsent drafts can be lost when closing the editor. No secure persistent draft store yet.
+- Private desktop/browser notifications and native call presentation omit names and avatars; platform history and call dialogs require verification. Notification payloads still contain local routing identifiers.
+- App lock removes automatic PIN deletion on logged-out startup, hides underlying UI while locked, checks lifecycle and mounted state, and caps UI retry delay. This is UI protection, not hardware-backed secret storage or restart-resistant brute-force prevention.
+- Added six transport tests and a read-only GitHub Actions workflow. CI and platform verification are still required.
+
+- Existing PIN confirmation is required before changing app-lock settings. Biometric requests are serialized while in progress; the UI retry delay is not persistent across restarts.
+
+## R3 implementation candidate — local media protection
+- Fixed the duplicated settings controller tail reported by CI, and analyzer findings in the R2 logs.
+- Persistent media cache is opt-in. The SDK is initialized without a file storage directory and with a zero size limit by default; direct MXC cache reads/writes and iOS notification avatar files are also gated. SDK pending-upload data and other platform/plugin cache paths require integration tests. Existing disk cache files are not erased automatically.
+- Event images are no longer retained in the shared application image map. Lock clears global image caches on a best-effort basis; live widget buffers, native media players, and GPU memory are not guaranteed erased.
+- Android main activity sets FLAG_SECURE and disallows cleartext traffic in the main manifest. Screenshots, screen sharing and some debugging workflows may be affected. Other activities and platforms need separate validation.
+- Hardware-backed vault, encrypted persistent media cache, restart-resistant PIN limits, secure draft persistence, and full native/RTC security testing are still outstanding.
+
+- Voice recording cancellation and send completion dispose the recorder and delete the app-owned temporary recording file after the callback completes. Active recording files remain plaintext; crashes can leave files behind. This is cleanup, not guaranteed secure erasure. The current callback does not preserve failed unsent voice drafts.
+
+- PIN attempt counters and retry deadlines are stored via FlutterSecureStorage with readback verification. Settings changes use the same throttled verification path as the lock screen. Biometric success resets the counter only if secure storage is available. The limit is best-effort across process restarts; it is not resistant to clock manipulation, compromised OS, or storage rollback.
+
+## R3 — native SQLCipher media vault
+- The native Matrix SDK database now overrides file persistence with a dedicated table on the existing keyed SQLCipher connection. Pending upload files/thumbnails remain available to the SDK; ordinary caching is opt-in and limited to 10 MB per item and 128 MB total. The SDK's existing 30-day cleanup cutoff applies to pending uploads too. Large pending files may increase database size or memory use; benchmark before release.
+- Cache keys are bound SQL values, not filesystem paths. Legacy plaintext cache files are not automatically imported or removed; legacy pending uploads may need to be reselected. iOS notification avatars when explicitly enabled and non-private, OS media/export/temp paths, browser storage and media players remain outside the vault.
+- Tests exercise vault semantics using SQLite; these do not prove SQLCipher is active on each platform. Actual native encryption, backup, queued-file restart and recovery tests remain release gates.
+
+## R4 — RTC security candidate
+- Preserve Olm encryptedContent in the call-key event wrapper; reject plaintext call keys, unknown/blocked/invalid devices, mismatching authenticated sender curve keys, mismatched room/session/membership, and malformed key/index values. Strict identity mode additionally requires verified devices. Membership/device ordering and Element interoperability need real cross-client tests; keys arriving before state/device sync may be dropped.
+- Require HTTPS RTC authorization and HTTPS/WSS media endpoints, with no embedded credentials. Do not log raw authorization responses or JWT-bearing errors. This is not a trusted-focus allowlist; a Matrix server or room member can still advertise an HTTPS focus. RTC media encryption remains the existing LiveKit E2EE implementation, not a new protocol.
+- Serialize call-key updates and request rotation every ten minutes in addition to membership-change rotation. The existing key-provider API is retained. Rotation failures are logged generically; full fail-closed media-state enforcement, early-key buffering, adversarial RTC tests and immediate revocation on trust changes remain open.
+
+- Strict identity mode restricts RTC focus selection to the local homeserver's advertised/configured RTC services. This reduces exposure to member-advertised endpoints; it does not protect against a malicious homeserver or an untrusted configured fallback.
+- CI retains its existing checks while accepting the project's security commit type. The dedicated workflow now reports formatting diffs and cancels superseded checks on the same ref; an unformatted candidate still fails the formatting gate.
+
+## R5 — identity continuity and room encryption policy
+- Strict interactive send checks require verified master keys, valid verified non-blocked devices, and a per-account local identity pin. A changed pin requires explicit consent and fresh interactive verification; no message is sent in the same attempt. Storage errors fail closed. This is local continuity, not key transparency or proof against a compromised device. Other SDK send flows and queued events may not traverse this UI check.
+- Newly created private groups and explicitly enabled encryption use standard Matrix rotation_period_ms and rotation_period_msgs state (24h/100 messages or strict 1h/20). Strict direct chat creation through the user dialog also sets the policy; existing rooms and other creation paths are not rewritten. SDK rotation and membership change behavior remains authoritative; remote room state changes may alter limits.
+- Global key sharing setting is applied to active clients, not just the selected account. Real multi-device interoperability remains a release gate.
+
+## R6 — build supply-chain controls
+- Web preparation pins the LiveKit E2EE worker to the exact source commit underlying locked livekit_client 2.13.2. Vodozemac 0.10.0 and native_imaging 1.0.0 web archives must match the upstream release asset SHA-256 digests. Downloads require HTTPS and use an isolated temporary directory. Version upgrades require explicit review and new pins.
+- Security workflow pins three action revisions, enforces the Dart lockfile and checks shell syntax. Upstream release asset digests are integrity anchors, not independent signatures or a reproducible build attestation. Native build dependencies, other workflows, transitive toolchains, full SBOM/CVE scanning and signed releases remain to be validated.
+
+## R7 — user security presets and dependency audit
+- Security settings now offer three explicit presets: Matrix compatible, encrypted rooms only, and verified identities. They are one-time preference bundles, not mandatory policy or certification. Restart is required to apply all effects. Partial persistence errors are shown to the user. Existing manual settings remain editable.
+- Dedicated CI jobs run checksum-pinned OSV-Scanner on supported lockfiles and export the resolved Dart dependency graph as an artifact. This inventory is not a full native/container SBOM. Findings require review and remediation; absence of findings is not a security guarantee.
+
+## R8 — native encrypted drafts
+- Native account vaults now contain a dedicated draft table. New plaintext SharedPreferences writes are removed, including when a legacy preference requests them. Ordinary room drafts are encrypted at rest by the same SQLCipher connection; thread and edit drafts are not persisted by this feature. Web has no persistent draft fallback. Verified preset disables new draft persistence; turning it off does not purge existing encrypted drafts.
+- Single-account legacy drafts migrate only after a successful readback, and only on opening the room; ambiguous multi-account drafts remain untouched. Account switching cancels pending writes. Delayed successful send completion uses conditional deletion; failures retain the last saved draft. Debounce, process crashes and bundled-account UI transitions can still lose the newest keystrokes; no guarantee of unsent draft recovery. Native platform SQLCipher and upgrade tests remain required.
+
+## R9 — bounded native media redirects
+- The native HTTP guard follows at most three validated HTTPS GET/HEAD redirects. Same-origin requests retain headers; cross-origin redirects are permitted only for Matrix media download/thumbnail requests and carry only Accept/Range. No automatic POST/PUT redirects, HTTP downgrade, userinfo, fragment or redirect loop; cross-origin target URLs with access_token are rejected. Web keeps redirects disabled due to browser transport constraints. Signed CDN URLs remain visible to the CDN and can point to arbitrary HTTPS hosts; this is credential containment, not a destination allowlist or SSRF proof. Real Matrix CDN, range and browser compatibility remain test gates.
+
+## R10 — protected storage failure handling
+- All reviewed Dart database key, SDK secure-storage, PIN and identity-pin call sites use centralized storage options. Flutter Secure Storage 11.2.0 defaults Android resetOnError to true; this is explicitly disabled, with its backup-assisted algorithm migration option enabled. Existing storage namespace and iOS notification access group are retained. The normal Android Keystore and Apple Keychain mechanisms remain in use; actual hardware backing is device-dependent and not attested.
+- Missing shared database keys are rejected if any SQLite database or sidecar survives in current or legacy locations. No automatic recreation over surviving account data. Device-wide Secure Enclave/StrongBox enrollment, background notification compatibility and transactional migration of existing keys still require real-platform testing. No hardware-protection claim is made solely from these options.
+
+## R11 — strict outgoing policy consistency
+- Strict identity mode forces SDK verified-only key sharing for startup, active clients and guarded sends; the looser share-policy dropdown is disabled while strict identity mode is enabled. Disabling strict identity via its switch requires the existing PIN if configured. Other preference paths and preset application are not an enterprise policy lock.
+- Strict timeline guard now accepts only m.room.encrypted at Matrix room timeline send endpoints, including reverse-proxy path prefixes. Unknown plaintext event types are rejected, not merely a fixed message blacklist. State events, to-device events, file uploads, encrypted payload integrity and unreviewed alternate transports are outside this boundary. This may block unencrypted reactions and application-specific signaling; test RTC and interoperability before release.
+
+## R12 — native encryption verification gate
+- Added a file-backed SQLCipher test using the same factory and key helper as production. The test checks cipher availability, draft/media readback after closing and reopening, absence of the ASCII sentinel and plaintext SQLite header in the database, and rejection of a wrong key without changing the existing file. This is a CI test, not a result yet; real mobile/desktop keychain, WAL, crash and migration tests remain necessary.
+
+## R14 — web deployment and upstream isolation
+- Web bootstrap and OAuth callback scripts moved out of inline HTML. Docker web build omits source maps; Nginx serves security headers, denies embedding, MIME sniffing and plugin objects, suppresses referrers, disallows unnecessary browser features, and rejects map/dotfile requests. Restrictive script/worker/connect CSP is report-only pending browser testing. TLS/HSTS must be configured at the HTTPS reverse proxy. Browser IndexedDB/localStorage and SSO callback fallback are not equivalent to native SQLCipher; dedicated origin and browser testing are required.
+- Legacy upstream publishing, release, Flutter update and Matrix notification jobs are scoped to the original upstream repository; they will not publish or notify from MatrixChat after merge. Existing main workflows remain active until this branch is merged. Independent signed candidate workflows replace automatic publication; no credentials or store deployment configured.
+
+## R15–R17 — secrets, SBOM, signed candidate and repeatability
+- Checksum-pinned Gitleaks scans the checked-out tree, redacts matched values, and fails on detections. No blanket exemptions or secret-containing reports are uploaded. History scanning is separate and must be performed with approved access; rotate any verified exposed credentials.
+- A deterministic CycloneDX 1.6 Dart dependency graph is emitted from resolved pub deps, with a generator self-test. This is a Dart-only SBOM, not a complete native/Cargo/Gradle/CocoaPods/container inventory or a list of verified component hashes. OSV checks supported lockfiles independently.
+- Manual main-only web candidate workflow builds twice and fails on any file hash difference; the normalized archive and checksums are generated only after matching outputs. A separate least-privilege job signs provenance and the Dart SBOM with GitHub artifact attestations. No automatic release or store publishing; no candidate has yet been built or signed. Same-runner rebuild agreement is not independent reproducibility; runner images, toolchains and transitive native dependencies still need stronger pinning.
+- After merge and successful manual candidate build, verify the extracted artifact checksum and run `gh attestation verify matrixchat-web.tar.gz --repo MSMSofts/matrixchat`. Also verify the workflow identity and trusted commit. Platform-specific Android/iOS/Windows signing requires separately controlled publisher keys and validation.
+
+## R13 / R18 — Android Keystore capability and local status panel
+- User-triggered Android native probe creates a unique temporary AES key, reads KeyInfo security level, and deletes only its own alias. StrongBox is attempted on advertising devices; TEE/hardware/software/unavailable are reported without disclosing keys. It tests a newly created probe key, NOT the existing database key or remote attestation. Android build and real-device validation are required. No forced StrongBox/Secure Enclave enrollment or destructive migration has been attempted.
+- Security Center displays actual loaded database type, active SDK key-sharing policy and current strict-send/identity settings. Browser storage is not labeled equivalent to the native vault. Hardware status is shown with its limitations; there is no misleading numerical security score.
+
+## R19–R20 — verification plan and algorithm agility gate
+- MatrixChat now has a project-specific disclosure policy and a release verification matrix covering authorization, local storage, identity, network, RTC, browser, native platforms and supply chain. Automated web-source checks guard against reintroducing inline scripts and missing baseline deployment headers. Independent penetration testing has not occurred.
+- Guarded room send paths reject an unsupported room encryption algorithm or disabled SDK encryption rather than relying only on the presence of m.room.encryption. Matrix's existing Megolm/Olm and Vodozemac remain authoritative. MLS, key transparency and post-quantum migration are deliberately not implemented as proprietary wire formats; requirements for future adoption are recorded in the verification plan.

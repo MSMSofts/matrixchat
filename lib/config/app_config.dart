@@ -36,22 +36,21 @@ abstract class AppConfig {
   static const String windowsNotificationGuid =
       '4894dfda-c70a-4ebc-b139-acae55f3988d';
 
-  static const String sourceCodeUrl =
-      'https://github.com/krille-chan/fluffychat';
+  static const String sourceCodeUrl = 'https://github.com/MSMSofts/matrixchat';
   static const String supportUrl =
-      'https://github.com/krille-chan/fluffychat/issues';
-  static const String changelogUrl = 'https://fluffychat.im/changelog/';
+      'https://github.com/MSMSofts/matrixchat/issues';
+  static const String changelogUrl =
+      'https://github.com/MSMSofts/matrixchat/releases';
   static const String latestReleaseApiUrl =
-      'https://api.github.com/repos/krille-chan/fluffychat/releases/latest';
-  static const String helpUrl =
-      'https://ko-fi.com/post/How-can-I-support-FluffyChat-J2G325WE6I';
+      'https://api.github.com/repos/MSMSofts/matrixchat/releases/latest';
+  static const String helpUrl = 'https://github.com/MSMSofts/matrixchat';
 
   static const Set<String> defaultReactions = {'👍', '❤️', '😂', '😮', '😢'};
 
   static final Uri newIssueUrl = Uri(
     scheme: 'https',
     host: 'github.com',
-    path: '/krille-chan/fluffychat/issues/new',
+    path: '/MSMSofts/matrixchat/issues/new',
   );
 
   static final Uri homeserverList = Uri(

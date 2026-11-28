@@ -8,7 +8,10 @@ import 'dart:io';
 
 import 'package:fluffychat/config/isrg_x1.dart';
 import 'package:fluffychat/config/isrg_x2.dart';
+import 'package:fluffychat/config/setting_keys.dart';
+import 'package:fluffychat/security/network_guard.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:http/retry.dart' as retry;
@@ -35,7 +38,17 @@ class CustomHttpClient {
     return HttpClient(context: context);
   }
 
-  static http.Client createHTTPClient() => retry.RetryClient(
-    PlatformInfos.isAndroid ? IOClient(customHttpClient()) : http.Client(),
+  static const allowLocalTestHttp =
+      kDebugMode && bool.fromEnvironment('MATRIXCHAT_ALLOW_LOCAL_TEST_HTTP');
+
+  static http.Client createHTTPClient() => NetworkGuard(
+    retry.RetryClient(
+      PlatformInfos.isAndroid ? IOClient(customHttpClient()) : http.Client(),
+    ),
+    requireEncryptedTimeline: () =>
+        AppSettings.requireEncryptedRooms.value ||
+        AppSettings.requireVerifiedIdentities.value,
+    allowLocalTestHttp: allowLocalTestHttp,
+    allowSafeRedirects: !kIsWeb,
   );
 }

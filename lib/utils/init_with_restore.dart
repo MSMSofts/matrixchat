@@ -107,14 +107,17 @@ extension InitWithRestoreExtension on Client {
           );
         }
       }
-    } catch (e, s) {
-      Logs().wtf('Client init failed!', e, s);
+    } catch (_) {
+      Logs().e('Client initialization failed.');
       final l10n = await lookupL10n(PlatformDispatcher.instance.locale);
       final sessionBackupString = await storage?.read(key: storageKey);
       if (sessionBackupString == null) {
         ClientManager.sendInitNotification(
           l10n.initAppError,
-          l10n.sessionLostBody(AppConfig.newIssueUrl.toString(), e.toString()),
+          l10n.sessionLostBody(
+            AppConfig.newIssueUrl.toString(),
+            'Secure initialization failed',
+          ),
         );
         rethrow;
       }
@@ -138,14 +141,17 @@ extension InitWithRestoreExtension on Client {
           l10n.initAppError,
           l10n.restoreSessionBody(
             AppConfig.newIssueUrl.toString(),
-            e.toString(),
+            'Secure initialization failed',
           ),
         );
-      } catch (e, s) {
-        Logs().wtf('Restore client failed!', e, s);
+      } catch (_) {
+        Logs().e('Session restoration failed.');
         ClientManager.sendInitNotification(
           l10n.initAppError,
-          l10n.sessionLostBody(AppConfig.newIssueUrl.toString(), e.toString()),
+          l10n.sessionLostBody(
+            AppConfig.newIssueUrl.toString(),
+            'Secure restoration failed',
+          ),
         );
         rethrow;
       }

@@ -1881,7 +1881,6 @@
             }
         }
     },
-    "reportErrorDescription": "😭 Åh nej. Något gick fel. Om du vill ian du rapportera denna bugg till utvecklarna.",
     "setColorTheme": "Välj färgtema:",
     "banUserDescription": "Användaren kommer bannlysas från chatten och kommer inte kunna gå med i chatten igen tills bannlysningen avslutas.",
     "removeDevicesDescription": "Du kommer att bli utloggad från den här enheten och kommer inte längre kunna få meddelanden.",
@@ -2183,7 +2182,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Databaskryptering stöds inte på denna platform",
     "thereAreCountUsersBlocked": "Just nu är {count} användare blockade.",
     "@thereAreCountUsersBlocked": {
         "type": "String",

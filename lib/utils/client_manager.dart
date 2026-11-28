@@ -3,10 +3,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import 'package:collection/collection.dart';
 import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/utils/custom_http_client.dart';
 import 'package:fluffychat/utils/custom_image_resizer.dart';
 import 'package:fluffychat/utils/init_with_restore.dart';
@@ -33,39 +33,33 @@ abstract class ClientManager {
     try {
       final clientNamesList = store.getStringList(clientNamespace) ?? [];
       clientNames.addAll(clientNamesList);
-    } catch (e, s) {
-      Logs().w('Client names in store are corrupted', e, s);
-      await store.remove(clientNamespace);
+    } catch (_) {
+      // Do not discard the account index or create a replacement account.
+      throw const SecurityStorageException();
     }
     if (clientNames.isEmpty) {
       clientNames.add(PlatformInfos.appDisplayName);
       await store.setStringList(clientNamespace, clientNames.toList());
     }
-    final clients = await Future.wait(
-      clientNames.map((name) => createClient(name, store)),
-    );
+    final clients = <Client>[
+      for (final name in clientNames) await createClient(name, store),
+    ];
     if (initialize) {
       await Future.wait(
         clients.map(
-          (client) => client
-              .initWithRestore(
-                onMigration: () async {
-                  final l10n = await lookupL10n(
-                    PlatformDispatcher.instance.locale,
-                  );
-                  sendInitNotification(
-                    l10n.databaseMigrationTitle,
-                    l10n.databaseMigrationBody,
-                  );
-                },
-              )
-              .catchError(
-                (e, s) => Logs().e('Unable to initialize client', e, s),
-              ),
+          (client) => client.initWithRestore(
+            onMigration: () async {
+              final l10n = await lookupL10n(PlatformDispatcher.instance.locale);
+              sendInitNotification(
+                l10n.databaseMigrationTitle,
+                l10n.databaseMigrationBody,
+              );
+            },
+          ),
         ),
       );
     }
-    if (clients.length > 1 && clients.any((c) => !c.isLogged())) {
+    if (initialize && clients.length > 1 && clients.any((c) => !c.isLogged())) {
       final loggedOutClients = clients.where((c) => !c.isLogged()).toList();
       for (final client in loggedOutClients) {
         Logs().w(
@@ -114,7 +108,10 @@ abstract class ClientManager {
     String clientName,
     SharedPreferences store,
   ) async {
-    final shareKeysWith = AppSettings.shareKeysWith.value;
+    final shareKeysWith = SecurityPolicy.keySharing(
+      AppSettings.shareKeysWith.value,
+      requireVerified: AppSettings.requireVerifiedIdentities.value,
+    );
     final enableSoftLogout = AppSettings.enableSoftLogout.value;
 
     return Client(
@@ -134,7 +131,7 @@ abstract class ClientManager {
       customImageResizer: PlatformInfos.supportsCustomImageResizer
           ? customImageResizer
           : null,
-      logLevel: Level.verbose,
+      logLevel: Level.error,
       database: await flutterMatrixSdkDatabaseBuilder(clientName),
       supportedLoginTypes: {
         AuthenticationTypes.password,
@@ -143,11 +140,7 @@ abstract class ClientManager {
       nativeImplementations: nativeImplementations,
       defaultNetworkRequestTimeout: const Duration(minutes: 30),
       enableDehydratedDevices: true,
-      shareKeysWith:
-          ShareKeysWith.values.singleWhereOrNull(
-            (share) => share.name == shareKeysWith,
-          ) ??
-          ShareKeysWith.all,
+      shareKeysWith: shareKeysWith,
       onSoftLogout: enableSoftLogout ? (c) => c.refreshAccessToken() : null,
       sendTimelineEventTimeout: Duration(
         seconds: AppSettings.sendTimelineEventTimeout.value,

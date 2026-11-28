@@ -1,0 +1,270 @@
+name: MatrixChat Platform Candidates
+on:
+  push:
+    branches: [security-hardening]
+    paths:
+      - '.github/workflows/matrixchat-platform-candidates.yaml'
+      - 'docs/build-candidates.md'
+      - 'windows/matrixchat-candidate.iss'
+      - 'scripts/package-windows.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: matrixchat-platform-candidates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - run: flutter pub get --enforce-lockfile
+      - run: dart format --output=none --set-exit-if-changed lib/ test/
+      - run: flutter analyze
+      - run: flutter test test/utils/security_policy_test.dart test/utils/network_guard_test.dart test/utils/pin_attempt_guard_test.dart test/utils/media_vault_test.dart test/utils/rtc_security_test.dart test/utils/identity_pin_test.dart test/utils/draft_vault_test.dart test/utils/sqlcipher_vault_test.dart test/utils/update_version_test.dart
+      - run: python3 scripts/validate_web_security.py
+
+  android:
+    needs: preflight
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    env:
+      MATRIXCHAT_CANDIDATE_BUILD: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - uses: ./.github/actions/free_up_space
+      - run: flutter pub get --enforce-lockfile
+      - name: Build universal APK with ephemeral debug signature
+        # Flutter must regenerate plugin registration in release mode.
+        # --no-pub after a generic pub get retained integration_test in Java.
+        run: |
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64
+          git diff --exit-code pubspec.lock
+      - name: Stage APK
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/matrixchat-android-candidate.apk
+          apksigner=$(find "${ANDROID_HOME}/build-tools" -type f -name apksigner | sort -V | tail -1)
+          test -n "$apksigner"
+          "$apksigner" verify --verbose --print-certs dist/matrixchat-android-candidate.apk
+      - name: Record source revision, licensing and SHA-256
+        run: python3 scripts/candidate_manifest.py "android-universal" "Release mode; ephemeral debug signature; separate candidate package"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-android-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    needs: preflight
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build windows --release --no-pub
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+      - name: Package independent candidate installer and portable bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./scripts/package-windows.ps1 -BuildMode Release -MatrixChatCandidate
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/windows/installer/matrixchat-windows-x64-portable.zip dist/
+          Copy-Item build/windows/installer/matrixchat-windows-x64-setup.exe dist/
+      - name: Record source revision, licensing and SHA-256
+        run: python scripts/candidate_manifest.py "windows-x64" "Release mode; unsigned portable bundle and separate candidate installer"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-windows-x64-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  linux:
+    needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-26.04
+          - arch: arm64
+            runner: ubuntu-26.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        if: matrix.arch == 'x64'
+        with:
+          flutter-version-file: .fvmrc
+      - name: Bootstrap exact Flutter SDK from source for ARM64
+        if: matrix.arch == 'arm64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')
+          git clone --depth 1 --branch "$version" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter-arm64"
+          git -C "$RUNNER_TEMP/flutter-arm64" describe --tags --exact-match
+          echo "$RUNNER_TEMP/flutter-arm64/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter-arm64/bin/flutter" --version
+          "$RUNNER_TEMP/flutter-arm64/bin/flutter" precache --linux
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - name: Install system build dependencies
+        run: sudo apt-get update && sudo apt-get install -y git wget curl clang cmake ninja-build pkg-config libgtk-3-dev libblkid-dev liblzma-dev libjsoncpp-dev cmake-data libsecret-1-dev libsecret-1-0 librhash1 libssl-dev libwebkit2gtk-4.1-dev libpulse-dev
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build linux --release --no-pub --target-platform linux-${{ matrix.arch }}
+      - name: Archive Linux bundle
+        run: |
+          mkdir -p dist
+          tar -czf dist/matrixchat-linux-${{ matrix.arch }}.tar.gz -C build/linux/${{ matrix.arch }}/release/bundle .
+      - name: Record source revision, licensing and SHA-256
+        run: python3 scripts/candidate_manifest.py "linux-${{ matrix.arch }}" "Release mode; unsigned bundle"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-linux-${{ matrix.arch }}-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  web:
+    needs: preflight
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - run: flutter pub get --enforce-lockfile
+      - run: ./scripts/prepare-web.sh
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build web --release --no-pub --dart-define=FLUTTER_WEB_CANVASKIT_URL=canvaskit/
+      - name: Package web assets and hardened deployment config
+        run: |
+          mkdir -p dist
+          tar -czf dist/matrixchat-web.tar.gz -C build web -C "$GITHUB_WORKSPACE" deploy/nginx/matrixchat.conf
+      - name: Record source revision, licensing and SHA-256
+        run: python3 scripts/candidate_manifest.py "web" "Release mode; unsigned web bundle; HTTPS proxy required"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-web-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  macos:
+    needs: preflight
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app
+      - name: Configure ad-hoc test signing
+        run: |
+          sed -i '' -e 's/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "-";/' -e 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/' -e 's/DEVELOPMENT_TEAM = [A-Z0-9]*;/DEVELOPMENT_TEAM = "";/' macos/Runner.xcodeproj/project.pbxproj
+          /usr/libexec/PlistBuddy -c "Delete :keychain-access-groups" macos/Runner/Release.entitlements
+          /usr/libexec/PlistBuddy -c "Delete :keychain-access-groups" macos/Runner/DebugProfile.entitlements
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build macos --release --no-pub
+      - name: Package macOS app
+        run: |
+          mkdir -p dist
+          app=$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -type d | head -1)
+          test -n "$app"
+          ditto -c -k --sequesterRsrc --keepParent "$app" dist/matrixchat-macos-adhoc.zip
+      - name: Record source revision, licensing and SHA-256
+        run: python3 scripts/candidate_manifest.py "macos" "Release mode; ad-hoc signing; not notarized"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-macos-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  ios:
+    needs: preflight
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: .fvmrc
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app
+      - run: flutter pub get --enforce-lockfile
+      - name: Build unsigned iOS app (retry transient Xcode resolver failures)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if flutter build ios --release --no-codesign; then
+              git diff --exit-code pubspec.lock
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            # Xcode previously crashed during concurrent SwiftPM package resolution.
+            # Resolve packages in a separate invocation, keeping the pinned project.
+            xcodebuild -resolvePackageDependencies -project ios/Runner.xcodeproj -scheme Runner || true
+          done
+      - name: Archive unsigned device app
+        run: |
+          mkdir -p dist
+          test -d build/ios/iphoneos/Runner.app
+          ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app dist/matrixchat-ios-unsigned.zip
+      - name: Record source revision, licensing and SHA-256
+        run: python3 scripts/candidate_manifest.py "ios-device" "Release mode; unsigned .app; not installable without Apple signing"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-ios-unsigned-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14

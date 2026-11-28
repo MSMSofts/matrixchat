@@ -1885,7 +1885,6 @@
     "openLinkInBrowser": "Abrir ligazón no navegador",
     "jump": "Ir alá",
     "report": "informar",
-    "reportErrorDescription": "😭 Vaia! Algo fallou. Se queres, podes informar do problema ás persoas desenvolvedoras.",
     "notAnImage": "Non é un ficheiro de imaxe.",
     "importNow": "Importar agora",
     "importEmojis": "Importar Emojis",
@@ -2102,7 +2101,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Nesta plataforma non temos soporte para cifrar a base de datos",
     "accessAndVisibility": "Acceso e Visibilidade",
     "accessAndVisibilityDescription": "Quen pode unirse a esta charla e de que xeito e como poden atopala.",
     "customEmojisAndStickers": "Emojis personais e adhesivos",
@@ -2766,8 +2764,6 @@
         }
     },
     "compressingVideo": "Comprimindo o vídeo…",
-    "shareCrashReports": "Compartir informe dos fallos",
-    "shareCrashReportsDescription": "Compartir automaticamente coas desenvolvedoras os informes dos fallos?",
     "countActiveCallMembers": "{count} participantes na chamada activa",
     "@countActiveCallMembers": {
         "placeholders": {

@@ -1863,7 +1863,6 @@
         }
     },
     "jumpToLastReadMessage": "Joan irakurritako azken mezura",
-    "reportErrorDescription": "😭 O ez! Zerbaitek huts egin du. Nahi izanez gero, eman garatzaileei errorearen berri.",
     "cuddleContent": "{senderName}(e)k samurki besarkatu zaitu",
     "@cuddleContent": {
         "type": "String",
@@ -2102,7 +2101,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Plataforma honetan ezin da datu-basea zifratu",
     "usersMustKnock": "Erabiltzaileek baimena eskatu behar dute",
     "knock": "Eskatu baimena",
     "knocking": "Baimena eskatzen",

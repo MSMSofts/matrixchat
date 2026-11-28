@@ -9,13 +9,13 @@ import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:fluffychat/config/app_config.dart';
+import 'package:fluffychat/security/protected_storage.dart';
 import 'package:fluffychat/utils/client_manager.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/notification_background_handler.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/utils/start_push_foreground_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_vodozemac/flutter_vodozemac.dart' as vod;
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:material_ui/material_ui.dart';
@@ -64,6 +64,7 @@ void main(List<String> args) => runZonedGuarded(() async {
   // widget bindings are initialized already.
   WidgetsFlutterBinding.ensureInitialized();
 
+  Logs().level = Level.error;
   final store = await AppSettings.init();
   Logs().i('Welcome to ${AppSettings.applicationName.value} <3');
 
@@ -104,13 +105,35 @@ void main(List<String> args) => runZonedGuarded(() async {
     return;
   }
 
-  final clients = await ClientManager.getClients(store: store);
+  try {
+    final clients = await ClientManager.getClients(store: store);
 
-  // Started in foreground mode.
-  Logs().i(
-    '${AppSettings.applicationName.value} started in foreground mode. Rendering GUI...',
-  );
-  await startGui(clients, store);
+    // Started in foreground mode.
+    Logs().i(
+      '${AppSettings.applicationName.value} started in foreground mode. Rendering GUI...',
+    );
+    await startGui(clients, store);
+  } catch (_) {
+    final persian = PlatformDispatcher.instance.locale.languageCode == 'fa';
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                persian
+                    ? 'راه‌اندازی امن ناموفق بود. داده‌های محلی را حذف نکنید. پس از باز کردن قفل دستگاه، برنامه را دوباره اجرا کنید.'
+                    : 'Secure startup failed. Do not delete local data. Unlock the device and restart the app.',
+                textAlign: TextAlign.center,
+                textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }, ErrorReporter.onFlutterError);
 
 /// Fetch the pincode for the applock and start the flutter engine.
@@ -120,16 +143,14 @@ Future<void> startGui(List<Client> clients, SharedPreferences store) async {
   var useBiometrics = false;
   if (PlatformInfos.supportsAppLock) {
     try {
-      pin = await const FlutterSecureStorage().read(
-        key: 'chat.fluffy.app_lock',
-      );
+      pin = await ProtectedStorage.local.read(key: 'chat.fluffy.app_lock');
       useBiometrics =
-          (await const FlutterSecureStorage().read(
+          (await ProtectedStorage.local.read(
             key: 'chat.fluffy.use_biometrics',
           )) ==
           'true';
-    } catch (e, s) {
-      Logs().d('Unable to read PIN from Secure storage', e, s);
+    } catch (_) {
+      throw StateError('Unable to read app lock settings securely.');
     }
   }
 

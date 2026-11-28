@@ -4,11 +4,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/security/room_crypto_policy.dart';
+import 'package:fluffychat/security/rtc_security.dart';
 import 'package:fluffychat/utils/call_kit_params.dart';
 import 'package:fluffychat/utils/error_reporter.dart';
 import 'package:fluffychat/utils/matrix_live_kit_calls/call_keys_event_content.dart';
@@ -25,6 +27,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:livekit_client/livekit_client.dart' as lk;
 import 'package:material_ui/material_ui.dart';
 import 'package:matrix/matrix.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class CallViewModelState {
@@ -42,7 +45,8 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   DateTime? startTime;
   StreamSubscription? _onCallEncryptionKeysSub, _onCallMembersChanged;
-  Timer? _resendCallMemberState;
+  Timer? _resendCallMemberState, _rotateCallKeyTimer;
+  final _callKeyLock = Lock();
   bool waitForOtherSide = false;
   String? callKitId;
 
@@ -67,44 +71,76 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
   }
 
   Future<void> _onCallEncryptionKeys(CallKeysEvent event) async {
-    final callKeys = event.callKeysContent;
-    final keyProvider = _keyProvider;
-    if (keyProvider == null) {
-      ErrorReporter(
-        null,
-        'Received a new key but the keyProvider is not ready yet!',
-      ).onErrorCallback(Exception(), StackTrace.current);
-      return;
-    }
-    final knownCallId = room.ownMatrixRtcMembership?.callId;
-    if (callKeys.roomId != room.id ||
-        (knownCallId != null && callKeys.session.callId != knownCallId)) {
-      Logs().d('Received call key for wrong group call.');
-      return;
-    }
+    try {
+      final callKeys = event.callKeysContent;
+      final keyProvider = _keyProvider;
+      if (keyProvider == null) return;
+      final knownCallId = room.ownMatrixRtcMembership?.callId;
+      if (callKeys.roomId != room.id ||
+          callKeys.session.application != 'm.call' ||
+          callKeys.session.scope != 'm.room' ||
+          (knownCallId != null && callKeys.session.callId != knownCallId)) {
+        return;
+      }
 
-    await keyProvider.setRawKey(
-      base64Decode(callKeys.keys.key),
-      participantId: '${event.sender}:${callKeys.member.claimedDeviceId}',
-      keyIndex: callKeys.keys.index,
-    );
+      final deviceId = callKeys.member.claimedDeviceId;
+      final device =
+          room.client.userDeviceKeys[event.sender]?.deviceKeys[deviceId];
+      if (device == null ||
+          !device.isValid ||
+          device.blocked ||
+          !RtcSecurity.matchesOlmSender(
+            encryptedContent: event.encryptedContent,
+            deviceCurveKey: device.curve25519Key,
+          ) ||
+          (AppSettings.requireVerifiedIdentities.value && !device.verified)) {
+        return;
+      }
+      final active = room.getActiveMatrixRtcMembers().any(
+        (member) =>
+            member.senderId == event.sender &&
+            member.deviceId == deviceId &&
+            member.membershipId == callKeys.member.id &&
+            member.callId == callKeys.session.callId,
+      );
+      if (!active) return;
+
+      final key = RtcSecurity.decodeCallKey(
+        callKeys.keys.key,
+        callKeys.keys.index,
+      );
+      if (key == null) return;
+      await keyProvider.setRawKey(
+        key,
+        participantId: '${event.sender}:$deviceId',
+        keyIndex: callKeys.keys.index,
+      );
+    } catch (_) {
+      Logs().w('Rejected invalid RTC key event.');
+    }
   }
 
-  Future<void> _createKeyAndShare() async {
+  Future<void> _createKeyAndShare({bool forceRotate = false}) =>
+      _callKeyLock.synchronized(() async {
+        await _shareCallKey(forceRotate: forceRotate);
+      });
+
+  Future<void> _shareCallKey({required bool forceRotate}) async {
     final liveKitRoom = value.room;
     if (liveKitRoom == null) return;
 
     final ownMemberId = '${room.client.userID}:${room.client.deviceID}';
 
-    final currentParticipants =
-        room
-            .getActiveMatrixRtcMembers()
-            .map((member) => member.membershipId)
-            .whereType<String>()
-            .toSet()
-          ..remove(ownMemberId);
+    final currentParticipants = <String>{
+      for (final member in room.getActiveMatrixRtcMembers())
+        if (member.senderId != null &&
+            member.deviceId != null &&
+            member.membershipId != null)
+          '${member.senderId}:${member.deviceId}',
+    }..remove(ownMemberId);
 
-    if (setEquals(currentParticipants, _lastSharedParticipants) &&
+    if (!forceRotate &&
+        setEquals(currentParticipants, _lastSharedParticipants) &&
         currentParticipants.isNotEmpty) {
       Logs().d(
         'Participant list has not changed. No need to share keys again!',
@@ -118,6 +154,7 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
 
     final keyCreatedAt = _keyCreatedAt;
     final canJustForwardToNewUsers =
+        !forceRotate &&
         keyCreatedAt != null &&
         DateTime.now().difference(keyCreatedAt).inSeconds < 15 &&
         _lastSharedParticipants.difference(currentParticipants).isEmpty;
@@ -136,7 +173,9 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
         participantId: ownMemberId,
       );
       _keyCreatedAt = DateTime.now();
+      final oldKey = _lastKey;
       _lastKey = key;
+      if (oldKey != null) oldKey.fillRange(0, oldKey.length, 0);
       if (_lastKey != null) {
         await liveKitRoom.e2eeManager?.setKeyIndex(
           index,
@@ -156,20 +195,23 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
       final deviceId = membershipParts.removeLast();
       final userId = membershipParts.join(':');
       final keys = room.client.userDeviceKeys[userId]?.deviceKeys[deviceId];
-      if (keys == null) {
-        Logs().w('No device keys found for $membershipId');
+      if (keys == null ||
+          !keys.isValid ||
+          !keys.encryptToDevice ||
+          (AppSettings.requireVerifiedIdentities.value && !keys.verified)) {
+        Logs().w('No trusted device keys available for RTC participant.');
         continue;
       }
       deviceKeys.add(keys);
     }
 
-    _lastSharedParticipants = currentParticipants;
     await room.shareMatrixRtcCallKey(
       key: key,
       index: index,
       memberId: ownMemberId,
       deviceKeys: deviceKeys,
     );
+    _lastSharedParticipants = currentParticipants;
   }
 
   Future<void> _init() async {
@@ -326,6 +368,11 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
     try {
       value.isLoading = true;
       notifyListeners();
+      if ((AppSettings.requireEncryptedRooms.value ||
+              AppSettings.requireVerifiedIdentities.value) &&
+          !RoomCryptoPolicy.canEncryptRoom(room)) {
+        throw StateError('Strict mode requires an encrypted call room.');
+      }
       final playWaitingSound =
           !room.hasActiveMatrixRtcCall && room.isDirectChat;
 
@@ -349,7 +396,9 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
           )
           .listen((_) {
             notifyListeners();
-            _createKeyAndShare();
+            _createKeyAndShare().catchError((Object _) {
+              Logs().w('RTC key update failed.');
+            });
           });
       await _createKeyAndShare();
 
@@ -374,6 +423,12 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
         ),
       );
 
+      _rotateCallKeyTimer?.cancel();
+      _rotateCallKeyTimer = Timer.periodic(const Duration(minutes: 10), (_) {
+        _createKeyAndShare(forceRotate: true).catchError((Object _) {
+          Logs().w('RTC key rotation failed.');
+        });
+      });
       _resendCallMemberState?.cancel();
       _resendCallMemberState = Timer.periodic(const Duration(hours: 1), (_) {
         final ownMembership = room.ownMatrixRtcMembership;
@@ -418,10 +473,11 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
       }
 
       notifyListeners();
-    } catch (e, s) {
-      Logs().e('Error while connecting', e, s);
-      value.error = e;
-      ErrorReporter(null, 'Unable to connect').onErrorCallback(e, s);
+    } catch (_) {
+      Logs().e('Secure call connection failed.');
+      final error = StateError('Unable to establish a secure call.');
+      value.error = error;
+      ErrorReporter(null, 'Unable to connect').onErrorCallback(error);
     } finally {
       value.isLoading = false;
       notifyListeners();
@@ -457,6 +513,10 @@ class CallViewModel extends ValueNotifier<CallViewModelState> {
     _onCallEncryptionKeysSub?.cancel();
     _onCallMembersChanged?.cancel();
     _resendCallMemberState?.cancel();
+    _rotateCallKeyTimer?.cancel();
+    final lastKey = _lastKey;
+    if (lastKey != null) lastKey.fillRange(0, lastKey.length, 0);
+    _lastKey = null;
     timeline?.cancelSubscriptions();
     value.localVideoTrack?.dispose();
     final callKitId = this.callKitId;

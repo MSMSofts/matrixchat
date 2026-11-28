@@ -28,8 +28,10 @@ COPY . /app
 RUN ./scripts/prepare-web.sh
 COPY config.* /app/
 RUN flutter pub get
-RUN flutter build web --dart-define=FLUTTER_WEB_CANVASKIT_URL=canvaskit/ --release --source-maps
+RUN flutter build web --dart-define=FLUTTER_WEB_CANVASKIT_URL=canvaskit/ --release
 
 FROM docker.io/nginx:alpine
 RUN rm -rf /usr/share/nginx/html
 COPY --from=builder /app/build/web /usr/share/nginx/html
+
+COPY deploy/nginx/matrixchat.conf /etc/nginx/conf.d/default.conf

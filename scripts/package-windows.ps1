@@ -8,7 +8,8 @@
 # zip archive (build/windows/installer/fluffychat-windows-x64.zip).
 param(
     [ValidateSet("Release", "Debug")]
-    [string]$BuildMode = "Release"
+    [string]$BuildMode = "Release",
+    [switch]$MatrixChatCandidate
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,9 +34,11 @@ if (-not $iscc) {
     throw "Inno Setup not found. Install it with 'choco install innosetup'."
 }
 
-& $iscc.FullName "/DAppVersion=$version" "/DBuildDir=..\$buildDir" windows\installer.iss
+$installerScript = if ($MatrixChatCandidate) { 'windows\matrixchat-candidate.iss' } else { 'windows\installer.iss' }
+& $iscc.FullName "/DAppVersion=$version" "/DBuildDir=..\$buildDir" $installerScript
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup failed with exit code $LASTEXITCODE"
 }
 
-Compress-Archive -Path "$buildDir\*" -DestinationPath build\windows\installer\fluffychat-windows-x64.zip -Force
+$zipName = if ($MatrixChatCandidate) { 'matrixchat-windows-x64-portable.zip' } else { 'fluffychat-windows-x64.zip' }
+Compress-Archive -Path "$buildDir\*" -DestinationPath "build\windows\installer\$zipName" -Force

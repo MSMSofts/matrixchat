@@ -25,11 +25,14 @@ class _LockScreenState extends State<LockScreen> {
   final TextEditingController _textEditingController = TextEditingController();
 
   Future<void> tryUnlockWithBiometrics() async {
+    if (_inputBlocked || !mounted) return;
     setState(() {
       _errorText = null;
+      _inputBlocked = true;
     });
 
     final success = await AppLock.of(context).unlockWithBiometrics();
+    if (!mounted) return;
 
     if (success) {
       setState(() {
@@ -44,9 +47,10 @@ class _LockScreenState extends State<LockScreen> {
       _inputBlocked = true;
     });
     Future.delayed(Duration(seconds: _coolDownSeconds)).then((_) {
+      if (!mounted) return;
       setState(() {
         _inputBlocked = false;
-        _coolDownSeconds *= 2;
+        _coolDownSeconds = (_coolDownSeconds * 2).clamp(5, 300);
         _errorText = null;
       });
     });
@@ -54,6 +58,7 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   Future<void> tryUnlock(String text) async {
+    if (_inputBlocked || !mounted) return;
     text = text.trim();
     setState(() {
       _errorText = null;
@@ -68,7 +73,11 @@ class _LockScreenState extends State<LockScreen> {
       return;
     }
 
-    if (AppLock.of(context).unlock(text)) {
+    final lock = AppLock.of(context);
+    setState(() => _inputBlocked = true);
+    final success = await lock.unlock(text);
+    if (!mounted) return;
+    if (success) {
       setState(() {
         _inputBlocked = false;
         _errorText = null;
@@ -77,14 +86,15 @@ class _LockScreenState extends State<LockScreen> {
       return;
     }
 
+    _coolDownSeconds = lock.pinRetryAfterSeconds.clamp(5, 300);
     setState(() {
       _errorText = L10n.of(context).wrongPinEntered(_coolDownSeconds);
       _inputBlocked = true;
     });
     Future.delayed(Duration(seconds: _coolDownSeconds)).then((_) {
+      if (!mounted) return;
       setState(() {
         _inputBlocked = false;
-        _coolDownSeconds *= 2;
         _errorText = null;
       });
     });

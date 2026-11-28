@@ -3,89 +3,37 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:fluffychat/config/setting_keys.dart';
-import 'package:fluffychat/l10n/l10n.dart';
-import 'package:fluffychat/utils/client_manager.dart';
+import 'package:fluffychat/security/protected_storage.dart';
+import 'package:fluffychat/security/security_policy.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:matrix/matrix.dart';
+import 'package:synchronized/synchronized.dart';
 
 const _passwordStorageKey = 'database_password';
+final _keyLock = Lock();
 
-const iosOptions = IOSOptions(
-  groupId: 'group.im.fluffychat.app',
-  accessibility: .first_unlock,
-);
-
-Future<String?> getDatabaseCipher() async {
-  String? password;
-
+/// Never erase a key or downgrade to plaintext after a storage error.
+Future<String> getDatabaseCipher({
+  required Future<bool> Function() hasExistingData,
+}) => _keyLock.synchronized(() async {
+  const storage = ProtectedStorage.shared;
   try {
-    password = await FlutterSecureStorage(
-      iOptions: iosOptions,
-    ).read(key: _passwordStorageKey, iOptions: iosOptions);
-    if (password != null) return password;
-
-    if (PlatformInfos.isIOS) {
-      final legacyPassword = await FlutterSecureStorage().read(
+    return await SecurityPolicy.resolveStorageKey(
+      read: () => storage.read(
         key: _passwordStorageKey,
-      );
-      if (legacyPassword != null) {
-        Logs().i('Migrate database key location on iOS...');
-        await FlutterSecureStorage().delete(key: _passwordStorageKey);
-        await FlutterSecureStorage(iOptions: iosOptions).write(
-          key: _passwordStorageKey,
-          value: legacyPassword,
-          iOptions: iosOptions,
-        );
-        return legacyPassword;
-      }
-    }
-
-    final rng = Random.secure();
-    final list = Uint8List(32);
-    list.setAll(0, Iterable.generate(list.length, (i) => rng.nextInt(256)));
-    final newPassword = base64UrlEncode(list);
-    await FlutterSecureStorage(
-      iOptions: iosOptions,
-    ).write(key: _passwordStorageKey, value: newPassword, iOptions: iosOptions);
-    // workaround for if we just wrote to the key and it still doesn't exist
-    password = await FlutterSecureStorage(
-      iOptions: iosOptions,
-    ).read(key: _passwordStorageKey, iOptions: iosOptions);
-    if (password == null) throw MissingPluginException();
-    return password;
-  } on MissingPluginException catch (e) {
-    FlutterSecureStorage(
-      iOptions: iosOptions,
-    ).delete(key: _passwordStorageKey, iOptions: iosOptions).catchError((_) {});
-    Logs().w('Database encryption is not supported on this platform', e);
-    _sendNoEncryptionWarning(e);
-  } catch (e, s) {
-    FlutterSecureStorage(
-      iOptions: iosOptions,
-    ).delete(key: _passwordStorageKey, iOptions: iosOptions).catchError((_) {});
-    Logs().w('Unable to init database encryption', e, s);
-    _sendNoEncryptionWarning(e);
+        iOptions: ProtectedStorage.sharedIos,
+      ),
+      readLegacy: () async {
+        if (!PlatformInfos.isIOS) return null;
+        return ProtectedStorage.local.read(key: _passwordStorageKey);
+      },
+      write: (value) => storage.write(
+        key: _passwordStorageKey,
+        value: value,
+        iOptions: ProtectedStorage.sharedIos,
+      ),
+      hasExistingData: hasExistingData,
+    );
+  } catch (_) {
+    throw const SecurityStorageException();
   }
-  return null;
-}
-
-Future<void> _sendNoEncryptionWarning(Object exception) async {
-  final isStored = AppSettings.noEncryptionWarningShown.value;
-
-  if (isStored == true) return;
-
-  final l10n = await lookupL10n(PlatformDispatcher.instance.locale);
-  ClientManager.sendInitNotification(
-    l10n.noDatabaseEncryption,
-    exception.toString(),
-  );
-
-  await AppSettings.noEncryptionWarningShown.setItem(true);
-}
+});

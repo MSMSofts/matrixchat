@@ -10,6 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: webiny/action-conventional-commits@v1.4.2
+        with:
+          allowed-commit-types: feat,fix,docs,style,refactor,test,build,perf,ci,chore,revert,merge,wip,security
       - name: Check licenses
         uses: fsfe/reuse-action@v6
       - run: ./scripts/generate-locale-config.sh
@@ -68,6 +70,14 @@ jobs:
       - run: flutter pub get
       - run: dart run golden_screenshot:download_apple_fonts
       - run: flutter test
+      - name: Preserve visual regression evidence
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: golden-failure-evidence
+          path: test/screenshots/failures/
+          if-no-files-found: warn
+          retention-days: 14
 
   build_debug_apk:
     needs: [ code_tests ]

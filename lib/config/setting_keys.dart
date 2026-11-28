@@ -40,19 +40,28 @@ enum AppSettings<T> {
   hideRedactedEvents<bool>('chat.fluffy.hideRedactedEvents', false),
   hideUnknownEvents<bool>('chat.fluffy.hideUnknownEvents', true),
   autoplayImages<bool>('chat.fluffy.autoplay_images', true),
-  sendTypingNotifications<bool>('chat.fluffy.send_typing_notifications', true),
-  sendPublicReadReceipts<bool>('chat.fluffy.send_public_read_receipts', true),
+  sendTypingNotifications<bool>('chat.fluffy.send_typing_notifications', false),
+  sendPublicReadReceipts<bool>('chat.fluffy.send_public_read_receipts', false),
+  privateNotifications<bool>('matrixchat.private_notifications', true),
+  requireEncryptedRooms<bool>('matrixchat.require_encrypted_rooms', false),
+  requireVerifiedIdentities<bool>(
+    'matrixchat.require_verified_identities',
+    false,
+  ),
+  persistPlaintextDrafts<bool>('matrixchat.persist_plaintext_drafts', false),
+  persistEncryptedDrafts<bool>('matrixchat.persist_encrypted_drafts', true),
+  persistMediaCache<bool>('matrixchat.persist_media_cache', false),
   swipeRightToLeftToReply<bool>('chat.fluffy.swipeRightToLeftToReply', true),
   sendOnEnter<bool>('chat.fluffy.send_on_enter', false),
   displayNavigationRail<bool>('chat.fluffy.display_navigation_rail', false),
-  shareKeysWith<String>('chat.fluffy.share_keys_with_2', 'all'),
+  shareKeysWith<String>('chat.fluffy.share_keys_with_2', 'verifiedOnly'),
   noEncryptionWarningShown<bool>(
     'chat.fluffy.no_encryption_warning_shown',
     false,
   ),
   displayChatDetailsColumn('chat.fluffy.display_chat_details_column', false),
   // AppConfig-mirrored settings
-  applicationName<String>('chat.fluffy.application_name', 'FluffyChat'),
+  applicationName<String>('chat.fluffy.application_name', 'MatrixChat'),
   defaultHomeserver<String>('chat.fluffy.default_homeserver', 'matrix.org'),
   // colorSchemeSeed stored as ARGB int
   colorSchemeSeedInt<int>('chat.fluffy.color_scheme_seed', 0xFF5625BA),
@@ -81,7 +90,7 @@ enum AppSettings<T> {
   benchmarksInLogs<bool>('chat.fluffy.benchmarks_in_logs', false),
   autoSendErrorReports<bool?>('chat.fluffy.auto_send_eror_reports', null),
   knownErrorHashes<List<String>>('chat.fluffy.known_crash_hashes', []),
-  checkForUpdates<bool>('chat.fluffy.check_for_updates', true),
+  checkForUpdates<bool>('chat.fluffy.check_for_updates', false),
   lastUpdateCheckDate<String>('chat.fluffy.last_update_check_date', ''),
   fallbackLiveKitInstance<String>('chat.fluffy.fallback_live_kit_instance', '');
 
@@ -241,22 +250,4 @@ extension AppSettingsDoubleExtension on AppSettings<double> {
   }
 
   Future<void> setItem(double value) => AppSettings.store.setDouble(key, value);
-}
-
-extension AppSettingsStringListExtension on AppSettings<List<String>> {
-  List<String> get value {
-    final value = Result(() => AppSettings.store.getStringList(key));
-    final error = value.asError;
-    if (error != null) {
-      Logs().e(
-        'Unable to fetch $key from storage. Removing entry...',
-        error.error,
-        error.stackTrace,
-      );
-    }
-    return value.asValue?.value ?? defaultValue;
-  }
-
-  Future<void> setItem(List<String> value) =>
-      AppSettings.store.setStringList(key, value);
 }

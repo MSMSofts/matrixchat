@@ -1491,7 +1491,6 @@
     "readUpToHere": "Чытаць тут",
     "jump": "Перайсці",
     "openLinkInBrowser": "Адкрыць спасылку ў браўзеры",
-    "reportErrorDescription": "😭 О не, штосьці пайшло не так. Калі жадаеце, можаце падаць справаздачу аб памылке распрауоўшчыкам.",
     "report": "паскардзіцца",
     "manageAccount": "Кіраванне ўліковым запісам",
     "noContactInformationProvided": "Сервер не мае ніякай вернай кантактнай інфармацыі",
@@ -2245,7 +2244,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Шыфраванне базы даных не падтрымліваецца гэтай платформай",
     "thereAreCountUsersBlocked": "На гэты момант, {count} карыстальнікаў заблакіравана.",
     "@thereAreCountUsersBlocked": {
         "type": "String",
@@ -2766,8 +2764,6 @@
     "doubleTapToReact": "Двайны націск для рэакцыі",
     "doubleTapToReactDescription": "Двайны націск на паведамленне, каб адрэагаваць замест выбару тэксту",
     "doubleTapReaction": "Рэакцыя пры двайным ціску",
-    "shareCrashReports": "Падзяліцца паведамленнем пра памылку",
-    "shareCrashReportsDescription": "Аўтаматычна дасылаць распрацоўшчыкам паведамленні пра памылкі?",
     "countActiveCallMembers": "{count} актыўных удзельнікаў выкліку",
     "@countActiveCallMembers": {
         "placeholders": {

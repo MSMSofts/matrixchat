@@ -6,8 +6,15 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint
 
 import android.content.Context
+import android.os.Bundle
+import android.view.WindowManager
 
 class MainActivity : FlutterFragmentActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onCreate(savedInstanceState)
+    }
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
@@ -31,7 +38,9 @@ class MainActivity : FlutterFragmentActivity() {
     companion object {
         var engine: FlutterEngine? = null
         fun provideEngine(context: Context): FlutterEngine {
-            val eng = engine ?: FlutterEngine(context, emptyArray(), true, false)
+            engine?.let { return it }
+            val eng = FlutterEngine(context, emptyArray(), true, false)
+            HardwareSecurityProbe.register(context, eng.dartExecutor.binaryMessenger)
             engine = eng
             return eng
         }

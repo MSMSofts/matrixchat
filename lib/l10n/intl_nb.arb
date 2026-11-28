@@ -1775,7 +1775,6 @@
         "type": "String",
         "placeholders": {}
     },
-    "noDatabaseEncryption": "Databasekryptering støttes ikke på denne plattformen",
     "changeGeneralChatSettings": "Endre generelle chatinnstillinger",
     "changeTheChatPermissions": "Endre chattillatelsene",
     "youInvitedBy": "📩 Du har blitt invitert av {user}",
@@ -1856,7 +1855,6 @@
     "disableEncryptionWarning": "Av sikkerhetshensyn kan du ikke deaktivere kryptering i en chat der det har vært aktivert tidligere.",
     "readUpToHere": "Lest frem til her",
     "jump": "Hopp",
-    "reportErrorDescription": "😭 Å nei. Noe gikk galt. Hvis du ønsker det, kan du rapportere denne feilen til utviklerne.",
     "invalidInput": "Ugyldig inndata!",
     "pleaseEnterANumber": "Vennligst skriv inn et tall større enn 0",
     "archiveRoomDescription": "Chatten vil bli flyttet til arkivet. Andre brukere vil kunne se at du har forlatt chatten.",
@@ -2773,8 +2771,6 @@
         }
     },
     "compressingVideo": "Komprimerer video...",
-    "shareCrashReports": "Del krasjrapporter",
-    "shareCrashReportsDescription": "Dele automatisk krasjrapporter med utviklerne?",
     "shareCrashReportsPrompt": "Vil du dele krasjrapporter automatisk med utviklerne? Les mer på {url} om hvilke data som deles.",
     "@shareCrashReportsPrompt": {
         "placeholders": {

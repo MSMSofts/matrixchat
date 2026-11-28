@@ -54,7 +54,7 @@ Future<void> pushHelper(
         flutterLocalNotificationsPlugin: flutterLocalNotificationsPlugin,
       ).timeout(const Duration(seconds: 30)),
     );
-  } catch (e, s) {
+  } catch (e) {
     if (e.toString() == 'Exception: Client is not logged in.') {
       Logs().w('Ignore push notification, when not logged in', e);
       return;
@@ -63,11 +63,11 @@ Future<void> pushHelper(
         e is! TimeoutException &&
         e is! IOException &&
         e is! http.ClientException) {
-      Logs().e('Push Helper has crashed! Writing into temporary file...', e, s);
+      Logs().e('Push helper failed. Sensitive diagnostics omitted.');
       final store = await SharedPreferences.getInstance();
       await store.setStringList(AppConfig.pushHelperCrashReportKey, [
-        e.toString(),
-        s.toString(),
+        e.runtimeType.toString(),
+        '',
       ]);
     }
 
@@ -112,13 +112,18 @@ Future<void> _tryPushHelper(
   required FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin,
 }) async {
   final isBackgroundMessage = clients == null;
-  Logs().v(
-    'Push helper has been started (background=$isBackgroundMessage).',
-    notification.toJson(),
-  );
+  Logs().v('Push helper has been started (background=$isBackgroundMessage).');
 
   final clientName = notification.clientName;
   final store = await AppSettings.init();
+  // Push input must never create an unknown local account or database.
+  if (clientName != null &&
+      !(store.getStringList(ClientManager.clientNamespace) ?? []).contains(
+        clientName,
+      ) &&
+      !(clients?.any((client) => client.clientName == clientName) ?? false)) {
+    return;
+  }
 
   final client = clientName == null
       ? (clients?.first ??
@@ -184,6 +189,31 @@ Future<void> _tryPushHelper(
       activeRoomId == notification.roomId &&
       WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
     Logs().v('Room is in foreground. Stop push helper here.');
+    return;
+  }
+
+  if (AppSettings.privateNotifications.value) {
+    await flutterLocalNotificationsPlugin.show(
+      id: notification.notificationId,
+      title: AppSettings.applicationName.value,
+      body: l10n.openAppToReadMessages,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          AppConfig.pushNotificationsChannelId,
+          l10n.incomingMessages,
+          category: AndroidNotificationCategory.message,
+          importance: Importance.high,
+          priority: Priority.max,
+          visibility: NotificationVisibility.private,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: FluffyChatPushPayload(
+        client.clientName,
+        event.room.id,
+        event.eventId,
+      ).toString(),
+    );
     return;
   }
 

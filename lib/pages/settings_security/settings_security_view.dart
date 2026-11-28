@@ -7,6 +7,9 @@ import 'package:fluffychat/config/app_config.dart';
 import 'package:fluffychat/config/setting_keys.dart';
 import 'package:fluffychat/config/themes.dart';
 import 'package:fluffychat/l10n/l10n.dart';
+import 'package:fluffychat/security/security_policy.dart';
+import 'package:fluffychat/security/security_presets.dart';
+import 'package:fluffychat/security/security_status_panel.dart';
 import 'package:fluffychat/utils/beautify_string_extension.dart';
 import 'package:fluffychat/utils/platform_infos.dart';
 import 'package:fluffychat/widgets/app_lock.dart';
@@ -59,6 +62,40 @@ class SettingsSecurityView extends StatelessWidget {
               return Column(
                 children: [
                   ListTile(
+                    leading: const Icon(Icons.security),
+                    title: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'مرکز امنیت MatrixChat'
+                          : 'MatrixChat Security Center',
+                    ),
+                    subtitle: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'تنظیمات پیشنهادی را یکجا اعمال کنید.'
+                          : 'Apply a bundle of security settings.',
+                    ),
+                  ),
+                  SecurityStatusPanel(client: client),
+                  for (final preset in SecurityPreset.values)
+                    ListTile(
+                      title: Text(switch (preset) {
+                        SecurityPreset.compatible =>
+                          Localizations.localeOf(context).languageCode == 'fa'
+                              ? 'سازگار با Matrix'
+                              : 'Matrix compatible',
+                        SecurityPreset.encrypted =>
+                          Localizations.localeOf(context).languageCode == 'fa'
+                              ? 'فقط اتاق رمزنگاری‌شده'
+                              : 'Encrypted rooms only',
+                        SecurityPreset.verified =>
+                          Localizations.localeOf(context).languageCode == 'fa'
+                              ? 'هویت تأییدشده'
+                              : 'Verified identities',
+                      }),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => controller.applySecurityPreset(preset),
+                    ),
+                  Divider(color: theme.dividerColor),
+                  ListTile(
                     title: Text(
                       L10n.of(context).privacy,
                       style: TextStyle(
@@ -80,10 +117,60 @@ class SettingsSecurityView extends StatelessWidget {
                     setting: AppSettings.sendPublicReadReceipts,
                   ),
                   SettingsSwitchListTile.adaptive(
-                    title: L10n.of(context).shareCrashReports,
-                    subtitle: L10n.of(context).shareCrashReportsDescription,
-                    setting: AppSettings.autoSendErrorReports,
-                    defaultValue: false,
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'اعلان خصوصی'
+                        : 'Private notifications',
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'محتوا و نام فرستنده در اعلان پیام نمایش داده نمی‌شود.'
+                        : 'Hide message content and sender in message notifications.',
+                    setting: AppSettings.privateNotifications,
+                  ),
+                  SettingsSwitchListTile.adaptive(
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'ارسال فقط در اتاق رمزنگاری‌شده'
+                        : 'Encrypted rooms only',
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'ارسال پیام معمولی بدون رمزنگاری مسدود می‌شود.'
+                        : 'Block plaintext message sends.',
+                    setting: AppSettings.requireEncryptedRooms,
+                  ),
+                  SwitchListTile.adaptive(
+                    title: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'الزام تأیید هویت مخاطبان'
+                          : 'Require verified identities',
+                    ),
+                    subtitle: Text(
+                      Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'در مسیرهای ارسال بررسی‌شده، تأیید هویت لازم است.'
+                          : 'Require verified identities in guarded send flows.',
+                    ),
+                    value: AppSettings.requireVerifiedIdentities.value,
+                    onChanged: controller.changeVerifiedIdentityMode,
+                  ),
+                  if (!PlatformInfos.isWeb)
+                    SettingsSwitchListTile.adaptive(
+                      title:
+                          Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'پیش‌نویس رمزنگاری‌شده'
+                          : 'Encrypted drafts',
+                      subtitle:
+                          Localizations.localeOf(context).languageCode == 'fa'
+                          ? 'ذخیره در دیتابیس امن حساب؛ خاموش کردن، نسخه‌های قبلی را حذف نمی‌کند.'
+                          : 'Save in the account vault. Turning off does not erase older drafts.',
+                      setting: AppSettings.persistEncryptedDrafts,
+                    ),
+                  SettingsSwitchListTile.adaptive(
+                    title: Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'کش دائمی رسانه'
+                        : 'Persistent media cache',
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'fa'
+                        ? 'خاموش: فقط فایل‌های در انتظار ارسال نگهداری می‌شوند. برای اعمال کامل برنامه را دوباره اجرا کنید.'
+                        : 'Off limits regular disk caching; pending uploads remain protected. Restart to apply.',
+                    setting: AppSettings.persistMediaCache,
                   ),
                   ListTile(
                     trailing: const Icon(Icons.chevron_right_outlined),
@@ -159,8 +246,10 @@ class SettingsSecurityView extends StatelessWidget {
                           AppConfig.borderRadius / 2,
                         ),
                         underline: const SizedBox.shrink(),
-                        value: Matrix.of(context).client.shareKeysWith,
-                        items: ShareKeysWith.values
+                        value: AppSettings.requireVerifiedIdentities.value
+                            ? ShareKeysWith.verifiedOnly
+                            : Matrix.of(context).client.shareKeysWith,
+                        items: SecurityPolicy.allowedKeySharing
                             .map(
                               (share) => DropdownMenuItem(
                                 value: share,
@@ -168,7 +257,9 @@ class SettingsSecurityView extends StatelessWidget {
                               ),
                             )
                             .toList(),
-                        onChanged: controller.changeShareKeysWith,
+                        onChanged: AppSettings.requireVerifiedIdentities.value
+                            ? null
+                            : controller.changeShareKeysWith,
                       ),
                     ),
                   ),

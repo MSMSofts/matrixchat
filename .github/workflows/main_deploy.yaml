@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   deploy_web:
+    if: github.repository == 'krille-chan/fluffychat'
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
@@ -46,6 +47,7 @@ jobs:
           keep_files: true
 
   deploy_playstore_internal:
+    if: github.repository == 'krille-chan/fluffychat'
     runs-on: ubuntu-26.04
     concurrency:
       group: deploy_playstore

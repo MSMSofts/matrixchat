@@ -86,6 +86,15 @@ Future<void> notificationTapBackground(
     notificationResponse.payload ?? '',
   );
   final clientName = payload.clientName;
+  if (clientName != null &&
+      !(store.getStringList(ClientManager.clientNamespace) ?? []).contains(
+        clientName,
+      )) {
+    pushIsolateReceivePort.sendPort.send('DONE');
+    IsolateNameServer.removePortNameMapping(AppConfig.pushIsolatePortName);
+    pushIsolateReceivePort.close();
+    return;
+  }
   final client = clientName == null
       ? (await ClientManager.getClients(store: store, initialize: false)).first
       : (await ClientManager.createClient(clientName, store));
@@ -121,11 +130,13 @@ Future<void> notificationTap(
   final payload = FluffyChatPushPayload.fromString(
     notificationResponse.payload ?? '',
   );
-  final client =
-      clients.firstWhereOrNull(
-        (client) => client.clientName == payload.clientName,
-      ) ??
-      clients.first;
+  if (clients.isEmpty) return;
+  final client = payload.clientName == null
+      ? (clients.length == 1 ? clients.first : null)
+      : clients.firstWhereOrNull(
+          (client) => client.clientName == payload.clientName,
+        );
+  if (client == null) return;
 
   updateSummaryNotification(
     flutterLocalNotificationsPlugin: FlutterLocalNotificationsPlugin(),
@@ -179,6 +190,12 @@ Future<void> notificationTap(
             public: AppSettings.sendPublicReadReceipts.value,
           );
         case FluffyChatNotificationActions.reply:
+          // Previously delivered notifications must not bypass current policy.
+          if (AppSettings.privateNotifications.value ||
+              AppSettings.requireEncryptedRooms.value ||
+              AppSettings.requireVerifiedIdentities.value) {
+            return;
+          }
           final input = notificationResponse.input;
           if (input == null || input.isEmpty) {
             throw Exception(

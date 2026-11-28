@@ -1979,7 +1979,6 @@
     "knock": "Zaklepat",
     "noBackupWarning": "Pozor! Bez povolení zálohování konverzací ztratíte přístup k zašifrovaným zprávám. Důrazně doporučujeme zálohování konverzací před odhlášením povolit.",
     "readUpToHere": "Čtěte až sem",
-    "reportErrorDescription": "😭 Ale ne, něco se porouchalo. Pokud chcete, můžete tento bug nahlásit vývojářům.",
     "report": "hlášení",
     "invite": "Pozvánka",
     "inviteGroupChat": "📨 Skupinová pozvánka",
@@ -2431,7 +2430,6 @@
             }
         }
     },
-    "noDatabaseEncryption": "Šifrování databáze není na tomto serveru podporováno",
     "thereAreCountUsersBlocked": "Máte zablokováno {count} uživatelů.",
     "@thereAreCountUsersBlocked": {
         "type": "String",
