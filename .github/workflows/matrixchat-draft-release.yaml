@@ -1,0 +1,89 @@
+name: MatrixChat Draft Release
+on:
+  push:
+    branches: [security-hardening]
+    paths:
+      - 'release/candidate.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: matrixchat-draft-release
+  cancel-in-progress: false
+
+jobs:
+  assemble:
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Fetch evidence and exact artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence incoming
+          build=$(jq -er '.build_run | numbers' release/candidate.json)
+          security=$(jq -er '.security_run | numbers' release/candidate.json)
+          pr=$(jq -er '.pull_request_run | numbers' release/candidate.json)
+          sha=$(jq -er '.source_commit | strings' release/candidate.json)
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$build" > evidence/build.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$security" > evidence/security.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$pr" > evidence/pr.json
+          gh run download "$build" --repo "$GITHUB_REPOSITORY" --pattern "matrixchat-*-$sha" --dir incoming
+          gh run download "$security" --repo "$GITHUB_REPOSITORY" --name dart-dependency-inventory --dir evidence/sbom
+      - name: Validate artifact contents and assemble versioned release
+        run: python3 scripts/assemble_release.py release/candidate.json evidence incoming release-dist
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: matrixchat-verified-release-payload
+          path: release-dist/
+          if-no-files-found: error
+          retention-days: 14
+
+  draft:
+    needs: assemble
+    if: github.repository == 'MSMSofts/matrixchat' && github.ref == 'refs/heads/security-hardening'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131
+        with:
+          name: matrixchat-verified-release-payload
+          path: release-dist/
+      - name: Create draft prerelease only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-dist
+          sha256sum --strict -c SHA256SUMS
+          version=$(jq -er '.version' RELEASE.json)
+          commit=$(jq -er '.source_commit' RELEASE.json)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]]
+          [[ "$commit" =~ ^[0-9a-f]{40}$ ]]
+          test "$(jq -r '.production_approved' RELEASE.json)" = false
+          tag="v$version"
+          # Fail closed rather than overwrite any existing tag or release.
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists; review manually."
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo "Tag already exists; review manually."
+            exit 1
+          fi
+          gh release create "$tag" ./* --repo "$GITHUB_REPOSITORY" --target "$commit" --title "MatrixChat $version" --notes-file RELEASE_NOTES.md --draft --prerelease --latest=false
